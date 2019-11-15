@@ -104,7 +104,7 @@ void send_data(void) {
     outData.actualSpeed_mmps = (int16_t)(speed_measured_mps * 1000);
 
     // transmits actual (measured) speed back to main panel
-    HAL_UART_Transmit_DMA(uart_cmd, (uint8_t*)&outData, sizeof(motorPanelDataOut_t));
+    HAL_UART_Transmit_DMA(uart_cmd, (uint8_t*)&outData, dataSize_motorPanelDataOut);
 }
 
 void handle_cmd(void) {
@@ -164,7 +164,7 @@ int main(void)
 
   bool initialized = false;
 
-  HAL_UART_Receive_DMA(uart_cmd, (uint8_t*)&inData, sizeof(motorPanelDataIn_t));
+  HAL_UART_Receive_DMA(uart_cmd, (uint8_t*)&inData, dataSize_motorPanelDataIn);
 
   dc_motor_initialize();
   encoder_initialize((encoder_t*)&encoder, ENCODER_MAX_VALUE);

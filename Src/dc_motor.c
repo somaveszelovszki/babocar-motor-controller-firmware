@@ -22,7 +22,7 @@ void dc_motor_write(float duty) {
     const int32_t PWM_STOP = motor_PWM_STOP;
     const int32_t PWM_MIN  = motor_HARD_MIN;
 
-    const int32_t pwm = duty >= 0.0f ? map(duty, 0.0f, 1.0f, motor_PWM_STOP, PWM_MAX) : map(duty, 0.0f, -1.0f, motor_PWM_STOP, PWM_MIN);
+    int32_t pwm = duty >= 0.0f ? map(duty, 0.0f, 1.0f, motor_PWM_STOP, PWM_MAX) : map(duty, 0.0f, -1.0f, motor_PWM_STOP, PWM_MIN);
 
     __HAL_TIM_SET_COMPARE(tim_motor, chnl_motor, (uint32_t)pwm);
 

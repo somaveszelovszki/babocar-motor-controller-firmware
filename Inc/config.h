@@ -31,7 +31,7 @@
 #define motor_PWM_PERIOD     20000
 #define motor_PWM_STOP       1500
 #define motor_HARD_MAX       1750
-#define motor_HARD_MIN       1200
+#define motor_HARD_MIN       1100
 
 #else
 

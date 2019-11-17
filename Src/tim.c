@@ -120,7 +120,7 @@ void MX_TIM14_Init(void)
   htim14.Instance = TIM14;
   htim14.Init.Prescaler = 48 - 1;
   htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim14.Init.Period = 40000 - 1;
+  htim14.Init.Period = 20000 - 1;
   htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
@@ -325,7 +325,6 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
     HAL_NVIC_EnableIRQ(TIM16_IRQn);
   /* USER CODE BEGIN TIM16_MspInit 1 */
     HAL_TIM_Base_Start_IT(&htim16);
-    HAL_TIM_IC_Start_IT(&htim14, TIM_CHANNEL_1);
   /* USER CODE END TIM16_MspInit 1 */
   }
   else if(tim_baseHandle->Instance==TIM17)

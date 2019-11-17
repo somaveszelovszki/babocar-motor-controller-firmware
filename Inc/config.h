@@ -7,9 +7,9 @@
 #define SPEED_CTRL_MAX_DELTA          0.1f
 #define SPEED_CTRL_DEADBAND_MPS       0.005f  // If measured speed is less than this value [m/s], speed controller output will be zero
 
+#define ENCODER_PERIOD_US             500u    // Period time of encoder evaluation - in [us]
 #define ENCODER_MAX_VALUE             65536
-#define ENCODER_DIFF_TO_MPS_RATIO     1.0f  // TODO
-#define ENCODER_ABS_POS_TO_MM_RATIO   1.0f  // TODO
+#define ENCODER_INCR_PER_MM           139.0627f
 #define MAX_CMD_DELAY_MS              200u  // If no command is received for this amount of time, motor needs to be stopped
 
 #define SAFETY_SIGNAL_CHECK_PERIOD_MS 10u   // Period of safety signal checking

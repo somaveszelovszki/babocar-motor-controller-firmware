@@ -12,6 +12,7 @@ void encoder_initialize(encoder_t *enc, int32_t max_value) {
 	enc->prev_pos = 0;
 	enc->last_diff = 0;
 	enc->max_value = max_value;
+	__HAL_TIM_SET_COUNTER(tim_encoder, 0);
 }
 
 void encoder_update(encoder_t *enc) {

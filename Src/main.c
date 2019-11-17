@@ -205,8 +205,6 @@ int main(void)
   {
       const uint32_t currentTime = HAL_GetTick();
 
-      volatile int64_t dist = encoder.abs_pos;
-
       if (currentTime >= nextSafetySignalCheckTime) {
           nextSafetySignalCheckTime += SAFETY_SIGNAL_CHECK_PERIOD_MS;
           update_motor_enabled();
@@ -341,8 +339,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         static uint8_t cntr = 0;
 
         encoder_update((encoder_t*)&encoder);
-        speed_measured_mps = encoder.last_diff * ENCODER_DIFF_TO_MPS_RATIO;
-        distance_mm = encoder.abs_pos * ENCODER_ABS_POS_TO_MM_RATIO;
+        speed_measured_mps = encoder.last_diff / ENCODER_INCR_PER_MM / (ENCODER_PERIOD_US / 1000.0f);
+        distance_mm = encoder.abs_pos / ENCODER_INCR_PER_MM;
 
         if (++cntr == 2 * 10) { // 10ms
 

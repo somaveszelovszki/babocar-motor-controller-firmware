@@ -130,11 +130,19 @@ void send_data(void) {
 
 void handle_cmd(void) {
 
-    if (isMotorEnabled) speedCtrl.desired = inData.targetSpeed_mmps / 1000.0f;
-    __disable_irq();
-    pi_controller_set_params((pi_controller_t*)&speedCtrl, inData.controller_Ti_us, inData.controller_Kc);
-    __enable_irq();
-    useSafetyEnableSignal = !!(inData.flags & MOTOR_PANEL_FLAG_USE_SAFETY_SIGNAL);
+    if (inData.flags == 1) {
+        if (isMotorEnabled) speedCtrl.desired = inData.targetSpeed_mmps / 1000.0f;
+        __disable_irq();
+        pi_controller_set_params((pi_controller_t*)&speedCtrl, inData.controller_Ti_us, inData.controller_Kc);
+        __enable_irq();
+        useSafetyEnableSignal = !!(inData.flags & MOTOR_PANEL_FLAG_USE_SAFETY_SIGNAL);
+    } else {
+        HAL_UART_AbortReceive_IT(uart_cmd);
+        HAL_Delay(5);
+        HAL_UART_Receive_DMA(uart_cmd, (uint8_t*)&inData, dataSize_motorPanelDataIn);
+    }
+    // else: invalid
+
 }
 
 /* USER CODE END PFP */
@@ -232,10 +240,11 @@ int main(void)
       }
 
       if (initialized) {
-          if (currentTime - lastCmdTime > MAX_CMD_DELAY_MS) {
+          if (false && currentTime - lastCmdTime > MAX_CMD_DELAY_MS) {
               HAL_UART_AbortReceive_IT(uart_cmd);
               initialized = false;
               speedCtrl.desired = 0.0f;
+              HAL_Delay(5);
           }
 
           if (currentTime >= nextSpeedSendTime) {
@@ -244,14 +253,16 @@ int main(void)
           }
       } else {
           panelStartData_t startData;
-          while (HAL_OK != HAL_UART_Receive(uart_cmd, (uint8_t*)&startData, dataSize_panelStartData, 250) && PANEL_START != startData.cmd) {
+          startData.cmd = 0;
+          while (HAL_OK != HAL_UART_Receive(uart_cmd, (uint8_t*)&startData, dataSize_panelStartData, 250) || PANEL_START != startData.cmd) {
               HAL_GPIO_TogglePin(gpio_user_led, gpio_pin_user_led);
           }
+          send_data();
+          HAL_Delay(5);
           HAL_UART_Receive_DMA(uart_cmd, (uint8_t*)&inData, dataSize_motorPanelDataIn);
 
           initialized = true;
           lastCmdTime = currentTime;
-          send_data();
           nextSpeedSendTime = currentTime + SPEED_SEND_PERIOD_MS;
           nextLedToggleTime = currentTime + 500;
       }

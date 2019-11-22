@@ -70,8 +70,10 @@ static volatile pi_controller_t speedCtrl;
 static volatile float speed_measured_mps = 0.0f;
 static volatile int32_t distance_mm = 0;
 
-motorPanelDataIn_t inData;
-motorPanelDataOut_t outData;
+static motorPanelDataIn_t inData;
+static motorPanelDataOut_t outData;
+
+static uint16_t targetSpeed_mmps = 0;
 
 /* USER CODE END PV */
 
@@ -121,8 +123,8 @@ void update_motor_enabled(void) {
 
 void send_data(void) {
     outData.distance_mm = distance_mm;
-    outData.targetSpeed_mmps = (int16_t)(speedCtrl.desired * 1000);
     outData.actualSpeed_mmps = (int16_t)(speed_measured_mps * 1000);
+    outData.targetSpeed_mmps = targetSpeed_mmps;
 
     // transmits actual (measured) speed back to main panel
     HAL_UART_Transmit_DMA(uart_cmd, (uint8_t*)&outData, dataSize_motorPanelDataOut);
@@ -131,12 +133,18 @@ void send_data(void) {
 void handle_cmd(void) {
 
     if (inData.flags == 1) {
-        if (isMotorEnabled) speedCtrl.desired = inData.targetSpeed_mmps / 1000.0f;
+        targetSpeed_mmps = inData.targetSpeed_mmps;
+        if (isMotorEnabled) {
+            speedCtrl.desired = targetSpeed_mmps / 1000.0f;
+        } else {
+            speedCtrl.desired = 0.0f;
+        }
         __disable_irq();
         pi_controller_set_params((pi_controller_t*)&speedCtrl, inData.controller_Ti_us, inData.controller_Kc);
         __enable_irq();
         useSafetyEnableSignal = !!(inData.flags & MOTOR_PANEL_FLAG_USE_SAFETY_SIGNAL);
     } else {
+        speedCtrl.desired = 0.0f;
         HAL_UART_AbortReceive_IT(uart_cmd);
         HAL_Delay(5);
         HAL_UART_Receive_DMA(uart_cmd, (uint8_t*)&inData, dataSize_motorPanelDataIn);
@@ -211,43 +219,27 @@ int main(void)
 
   while (1)
   {
-      const uint32_t currentTime = HAL_GetTick();
-
-      if (currentTime >= nextSafetySignalCheckTime) {
+      if (HAL_GetTick() >= nextSafetySignalCheckTime) {
           nextSafetySignalCheckTime += SAFETY_SIGNAL_CHECK_PERIOD_MS;
           update_motor_enabled();
-      }
-
-      // TODO
-      {
-          volatile int32_t recvPwm = (int32_t)rc_recv_in_speed;
-
-          if (isMotorEnabled) {
-              // desired speed is set in handle_cmd()
-          } else if (recvPwm > 900 && recvPwm < 1450) {
-              speedCtrl.desired = map(recvPwm, 1000, 2000, -1.0f, 1.0f);
-          } else {
-              speedCtrl.desired = 0.0f;
-          }
-
       }
 
       if (newCmd) {
           newCmd = false;
           initialized = true;
-          lastCmdTime = currentTime;
+          lastCmdTime = HAL_GetTick();
           handle_cmd();
       }
 
       if (initialized) {
-          if (false && currentTime - lastCmdTime > MAX_CMD_DELAY_MS) {
+          if (HAL_GetTick() - lastCmdTime > MAX_CMD_DELAY_MS) {
               HAL_UART_AbortReceive_IT(uart_cmd);
               initialized = false;
               speedCtrl.desired = 0.0f;
               HAL_Delay(5);
           }
 
-          if (currentTime >= nextSpeedSendTime) {
+          if (HAL_GetTick() >= nextSpeedSendTime) {
               nextSpeedSendTime += SPEED_SEND_PERIOD_MS;
               send_data();
           }
@@ -262,12 +254,12 @@ int main(void)
           HAL_UART_Receive_DMA(uart_cmd, (uint8_t*)&inData, dataSize_motorPanelDataIn);
 
           initialized = true;
-          lastCmdTime = currentTime;
-          nextSpeedSendTime = currentTime + SPEED_SEND_PERIOD_MS;
-          nextLedToggleTime = currentTime + 500;
+          lastCmdTime = HAL_GetTick();
+          nextSpeedSendTime = HAL_GetTick() + SPEED_SEND_PERIOD_MS;
+          nextLedToggleTime = HAL_GetTick() + 500;
       }
 
-      if (currentTime >= nextLedToggleTime) {
+      if (HAL_GetTick() >= nextLedToggleTime) {
           nextLedToggleTime += (initialized ? 500 : 250);
           HAL_GPIO_TogglePin(gpio_user_led, gpio_pin_user_led);
       }
@@ -353,16 +345,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         speed_measured_mps = encoder.last_diff / ENCODER_INCR_PER_MM / (ENCODER_PERIOD_US / 1000.0f);
         distance_mm = encoder.abs_pos / ENCODER_INCR_PER_MM;
 
-        if (++cntr == 2 * 10) { // 10ms
-
-            if (isMotorEnabled || 1)
-            {
-                pi_controller_update((pi_controller_t*)&speedCtrl, speed_measured_mps);
-                //dc_motor_write(speedCtrl.output);
-                dc_motor_write(speedCtrl.desired);
-            } else {
-                dc_motor_write(0.0f);
-            }
+        if (++cntr == 4 * 10) { // 20ms
+            pi_controller_update((pi_controller_t*)&speedCtrl, speed_measured_mps);
+            dc_motor_write(speedCtrl.output);
             cntr = 0;
         }
 	}

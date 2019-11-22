@@ -1,11 +1,11 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-#define SPEED_CTRL_PERIOD_US          500u    // TODO [us]
-#define SPEED_CTRL_Ti_US              500u    // TODO [us]
-#define SPEED_CTRL_Kc                 0.0f    // TODO
-#define SPEED_CTRL_MAX_DELTA          0.1f
-#define SPEED_CTRL_DEADBAND_MPS       0.005f  // If measured speed is less than this value [m/s], speed controller output will be zero
+#define SPEED_CTRL_PERIOD_US          20000u    // TODO [us]
+#define SPEED_CTRL_Ti_US              100u    // TODO [us]
+#define SPEED_CTRL_Kc                 0.0001f    // TODO
+#define SPEED_CTRL_MAX_DELTA          1.0f
+#define SPEED_CTRL_DEADBAND_MPS       0.01f  // If measured speed is less than this value [m/s], speed controller output will be zero
 
 #define ENCODER_PERIOD_US             500u    // Period time of encoder evaluation - in [us]
 #define ENCODER_MAX_VALUE             65536
@@ -31,7 +31,7 @@
 #define motor_PWM_PERIOD     20000
 #define motor_PWM_STOP       1500
 #define motor_HARD_MAX       1750
-#define motor_HARD_MIN       1100
+#define motor_HARD_MIN       1000
 
 #else
 

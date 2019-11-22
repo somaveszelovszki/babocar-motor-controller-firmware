@@ -22,7 +22,11 @@ void dc_motor_write(float duty) {
     const int32_t PWM_STOP = motor_PWM_STOP;
     const int32_t PWM_MIN  = motor_HARD_MIN;
 
-    int32_t pwm = duty >= 0.0f ? map(duty, 0.0f, 1.0f, motor_PWM_STOP, PWM_MAX) : map(duty, 0.0f, -1.0f, motor_PWM_STOP, PWM_MIN);
+    int32_t pwm = 1500;
+    if (duty > 0.02f) pwm = MAP(duty, 0.0f, 1.0f, 1550, PWM_MAX);
+    else if (duty < -0.02f) pwm = MAP(duty, 0.0f, -1.0f, 1470, PWM_MIN);
+
+    //int32_t pwm = duty >= 0.0f ? MAP(duty, 0.0f, 1.0f, PWM_STOP, PWM_MAX) : MAP(duty, 0.0f, -1.0f, PWM_STOP, PWM_MIN);
 
     __HAL_TIM_SET_COMPARE(tim_motor, chnl_motor, (uint32_t)pwm);
 
@@ -33,7 +37,7 @@ void dc_motor_write(float duty) {
     const int32_t PWM_MAX = motor_HARD_MAX;
     const int32_t PWM_MIN = chnl2_pwm(PWM_MAX);
 
-    const int32_t pwm1 = map(duty, -1.0f, 1.0f, PWM_MIN, PWM_MAX);
+    const int32_t pwm1 = MAP(duty, -1.0f, 1.0f, PWM_MIN, PWM_MAX);
     const int32_t pwm2 = chnl2_pwm(pwm1);
 
     __HAL_TIM_SET_COMPARE(tim_motor, chnl_bridge_1_high, pwm1 - DEAD_TIME_DELTA);

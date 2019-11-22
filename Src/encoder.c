@@ -1,5 +1,6 @@
 #include "encoder.h"
 #include "config.h"
+#include "common.h"
 
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_tim.h"
@@ -19,9 +20,9 @@ void encoder_update(encoder_t *enc) {
 	const int32_t pos = __HAL_TIM_GET_COUNTER(tim_encoder);
 	int32_t diff = pos - enc->prev_pos;
 
-	if (abs(diff) > enc->max_value / 2) {
+	if (ABS(diff) > enc->max_value / 2) {
 		const int32_t dp = diff + enc->max_value, dm = diff - enc->max_value;
-		diff = abs(dp) <= abs(dm) ? dp : dm;
+		diff = ABS(dp) <= ABS(dm) ? dp : dm;
 	}
 
 	enc->abs_pos += (int64_t)diff;

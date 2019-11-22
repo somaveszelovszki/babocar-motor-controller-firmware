@@ -3,17 +3,18 @@
 
 #include <micro/utils/types.h>
 
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#define max(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define ABS(a) ((a) >= 0 ? (a) : (-a))
 
 int32_t round_to_int(float value);
 
-#define clamp(value, bound1, bound2)    \
+#define CLAMP(value, bound1, bound2)    \
 ((bound1) <= (bound2) ?                 \
-max(min((value), (bound2)), (bound1)) : \
-min(max((value), (bound2)), (bound1)))
+MAX(MIN((value), (bound2)), (bound1)) : \
+MIN(MAX((value), (bound2)), (bound1)))
 
-#define map(value, from_low, from_high, to_low, to_high) \
-((to_low) + (clamp((value), (from_low), (from_high)) - (from_low)) * ((to_high) - (to_low)) / ((from_high) - (from_low)))
+#define MAP(value, from_low, from_high, to_low, to_high) \
+((to_low) + (CLAMP((value), (from_low), (from_high)) - (from_low)) * ((to_high) - (to_low)) / ((from_high) - (from_low)))
 
 #endif /* COMMON_H_ */

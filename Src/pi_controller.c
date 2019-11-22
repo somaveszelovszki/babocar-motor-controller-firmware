@@ -3,8 +3,13 @@
 
 #include <stdlib.h>
 
+static const float P = 0.8f;
+static const float I = 0.04f;
+static float integral = 0.0f;
+static const float INTEGRAL_MAX = 2.0f;
+
 static void update_coeffs(pi_controller_t *pi) {
-    pi->b0 = pi->Kc * (1 + (float)pi->Ti_us / pi->period_us);
+    pi->b0 = pi->Kc * (1 + (float)pi->period_us / pi->Ti_us);
     pi->b1 = -pi->Kc;
 }
 
@@ -28,14 +33,16 @@ void pi_controller_set_params(pi_controller_t *pi, uint32_t Ti_us, float Kc) {
 }
 
 void pi_controller_update(pi_controller_t *pi, float measured) {
-	if (0.0f == pi->desired && abs(measured) < pi->deadband) {
+	if (0.0f == pi->desired && ABS(measured) < pi->deadband) {
 	    pi->output = 0.0f;
 	    pi->ek1 = 0.0f;
 	} else {
         const float ek = pi->desired - measured;
-        const float prev_out = pi->output;
-        pi->output += pi->b0 * ek + pi->b1 * pi->ek1;
-        pi->output = clamp(pi->output, prev_out - pi->max_delta, prev_out + pi->max_delta);
-        pi->output = clamp(pi->output, pi->out_min, pi->out_max);
+//        const float prev_out = pi->output;
+//        pi->output += pi->b0 * ek + pi->b1 * pi->ek1;
+//        pi->output = CLAMP(pi->output, prev_out - pi->max_delta, prev_out + pi->max_delta);
+//        pi->output = CLAMP(pi->output, pi->out_min, pi->out_max);
+        integral = CLAMP(integral + ek, -INTEGRAL_MAX, INTEGRAL_MAX);
+        pi->output = CLAMP(ek * P + integral * I, pi->out_min, pi->out_max);
 	}
 }

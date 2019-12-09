@@ -22,9 +22,9 @@ void dc_motor_write(float duty) {
     const int32_t PWM_STOP = motor_PWM_STOP;
     const int32_t PWM_MIN  = motor_HARD_MIN;
 
-    int32_t pwm = 1500;
+    int32_t pwm = PWM_STOP;
     if (duty > 0.02f) pwm = MAP(duty, 0.0f, 1.0f, 1550, PWM_MAX);
-    else if (duty < -0.02f) pwm = MAP(duty, 0.0f, -1.0f, 1470, PWM_MIN);
+    else if (duty < -0.02f) pwm = MAP(duty, 0.0f, -1.0f, 1450, PWM_MIN);
 
     //int32_t pwm = duty >= 0.0f ? MAP(duty, 0.0f, 1.0f, PWM_STOP, PWM_MAX) : MAP(duty, 0.0f, -1.0f, PWM_STOP, PWM_MIN);
 

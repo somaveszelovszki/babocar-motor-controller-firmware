@@ -90,7 +90,7 @@ void update_motor_enabled(void) {
 
     bool enabled = false;
 
-    if (useSafetyEnableSignal || 1) {
+    if (useSafetyEnableSignal) {
         if (last_rc_recv_in_speed_time != prev_rc_recv_in_speed_time) {
 
             const uint32_t recvPwm = rc_recv_in_speed;

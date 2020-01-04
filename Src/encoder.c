@@ -9,8 +9,9 @@
 #include <stdlib.h>
 
 void encoder_initialize(encoder_t *enc, int32_t max_value) {
-    enc->abs_pos = 0LL;
-	enc->prev_pos = 0;
+    enc->abs_pos   = 0LL;
+    enc->num_incr  = 0LL;
+	enc->prev_pos  = 0;
 	enc->last_diff = 0;
 	enc->max_value = max_value;
 	__HAL_TIM_SET_COUNTER(tim_encoder, 0);
@@ -26,6 +27,7 @@ void encoder_update(encoder_t *enc) {
 	}
 
 	enc->abs_pos += (int64_t)diff;
+    enc->num_incr += (int64_t)ABS(diff);
 	enc->prev_pos = pos;
 	enc->last_diff = diff;
 }

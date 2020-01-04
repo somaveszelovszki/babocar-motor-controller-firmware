@@ -16,7 +16,7 @@
 
 #define SPEED_SEND_PERIOD_MS          10u   // Period of speed sending
 
-#define FACTORY_MOTOR_CONTROLLER 1
+#define FACTORY_MOTOR_CONTROLLER 0
 
 #define uart_cmd (&huart1)
 
@@ -40,7 +40,7 @@
 #define chnl_bridge_2_high   TIM_CHANNEL_2
 #define chnl_bridge_2_low    TIM_CHANNEL_1
 #define motor_PWM_PERIOD     (48 * 20)
-#define motor_HARD_MAX       ((int32_t)(motor_PWM_PERIOD * 0.75f))
+#define motor_HARD_MAX       ((int32_t)(motor_PWM_PERIOD * 0.90f))
 #define motor_DEAD_TIME_TICK 24
 
 #endif // FACTORY_MOTOR_CONTROLLER

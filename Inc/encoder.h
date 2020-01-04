@@ -5,6 +5,7 @@
 
 typedef struct {
     int64_t abs_pos;
+    int64_t num_incr;
 	int32_t prev_pos;
 	int32_t last_diff;
 	int32_t max_value;

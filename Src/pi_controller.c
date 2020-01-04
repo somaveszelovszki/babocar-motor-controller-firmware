@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-static const float P = 0.8f;
+static const float P = 0.5f;
 static const float I = 0.04f;
 static float integral = 0.0f;
 static const float INTEGRAL_MAX = 2.0f;

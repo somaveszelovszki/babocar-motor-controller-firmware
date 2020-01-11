@@ -1,18 +1,17 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-#define SPEED_CTRL_PERIOD_US          20000u    // TODO [us]
-#define SPEED_CTRL_Ti_US              100u    // TODO [us]
-#define SPEED_CTRL_Kc                 0.0001f    // TODO
-#define SPEED_CTRL_MAX_DELTA          1.0f
+#define SPEED_CTRL_PERIOD_US          500u    // TODO [us]
+#define SPEED_CTRL_Ti_US              484u    // in [us]
+#define SPEED_CTRL_Kc                 0.01f    // TODO
+#define SPEED_CTRL_MAX_DELTA          0.01f
 #define SPEED_CTRL_DEADBAND_MPS       0.01f  // If measured speed is less than this value [m/s], speed controller output will be zero
 
 #define ENCODER_PERIOD_US             500u    // Period time of encoder evaluation - in [us]
 #define ENCODER_MAX_VALUE             65536
 #define ENCODER_INCR_PER_MM           139.0627f
-#define MAX_CMD_DELAY_MS              200u  // If no command is received for this amount of time, motor needs to be stopped
 
-#define SAFETY_SIGNAL_CHECK_PERIOD_MS 20u   // Period of safety signal checking
+#define SAFETY_SIGNAL_CHECK_PERIOD_MS 20u   // Period of safety signal checking - in [ms]
 
 #define uart_cmd                  (&huart1)
 

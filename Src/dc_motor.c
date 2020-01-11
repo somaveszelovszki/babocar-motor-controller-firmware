@@ -1,6 +1,7 @@
 #include "dc_motor.h"
 #include "config.h"
-#include "common.h"
+
+#include <micro/math/numeric.h>
 
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_tim.h"

@@ -63,10 +63,15 @@
 static volatile encoder_t encoder;
 static volatile uint32_t rc_recv_in_speed = 1500;
 static volatile uint32_t last_rc_recv_in_speed_time = 0;
-static volatile pi_controller_t speedCtrl;
+static volatile pi_controller_t speedCtrl = PI_CONTROLLER_INIT(SPEED_CTRL_P, SPEED_CTRL_I, SPEED_CTRL_INTEGRAL_MAX, -1.0f, 1.0f, SPEED_CTRL_DEADBAND_MPS);
 static volatile float speed_measured_mps = 0.0f;
 static volatile int32_t distance_mm = 0;
 static volatile panelLink_t panelLink;
+static volatile bool newCmd = false;
+static volatile uint32_t lastConnectedTime = 0;
+
+motorPanelDataIn_t inData;
+motorPanelDataOut_t outData;
 
 static bool useSafetyEnableSignal = true;
 static bool isMotorEnabled = false;
@@ -80,41 +85,28 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 
-void updateMotorEnabled(bool isConnected) {
-    static const uint8_t BOUNCE_LIMIT = 3;
+void updateMotorEnabled(void) {
+    static const uint32_t BOUNCE_LIMIT = 3;
     static uint8_t bounce_cntr = 0;
     static uint32_t prev_rc_recv_in_speed_time = 0;
 
     bool enabled = false;
 
-    if (isConnected) {
-        if (useSafetyEnableSignal) {
-            if (last_rc_recv_in_speed_time != prev_rc_recv_in_speed_time) {
+    if (useSafetyEnableSignal) {
+        const uint32_t recvPwm = rc_recv_in_speed;
+        const bool en = (recvPwm > 1700 && recvPwm < 2150);
 
-                const uint32_t recvPwm = rc_recv_in_speed;
-                const bool en = (recvPwm > 1700 && recvPwm < 2150);
-
-                if (en == isMotorEnabled) {
-                    enabled = isMotorEnabled;
-                    bounce_cntr = 0;
-                } else if (++bounce_cntr > BOUNCE_LIMIT) {
-                    enabled = en;
-                    bounce_cntr = 0;
-                } else {
-                    enabled = isMotorEnabled;
-                }
-
-                prev_rc_recv_in_speed_time = last_rc_recv_in_speed_time;
-
-            } else if (HAL_GetTick() - last_rc_recv_in_speed_time > 200) {
-                enabled = false;
-                bounce_cntr = 0;
-            } else {
-                enabled = isMotorEnabled;
-            }
+        if (en == isMotorEnabled) {
+            enabled = isMotorEnabled;
+            bounce_cntr = 0;
+        } else if (++bounce_cntr > BOUNCE_LIMIT) {
+            enabled = en;
+            bounce_cntr = 0;
         } else {
-            enabled = true;
+            enabled = isMotorEnabled;
         }
+    } else {
+        enabled = true;
     }
 
     isMotorEnabled = enabled;
@@ -129,13 +121,14 @@ void fillTxData(motorPanelDataOut_t *txData) {
 void handleRxData(motorPanelDataIn_t *rxData) {
     targetSpeed_mps = rxData->targetSpeed_mmps / 1000.0f;
 
-    if ((uint32_t)rxData->controller_Ti_us != speedCtrl.Ti_us || rxData->controller_Kc != speedCtrl.Kc) {
-        __disable_irq();
-        pi_controller_set_params((pi_controller_t*)&speedCtrl, (uint32_t)rxData->controller_Ti_us, rxData->controller_Kc);
-        __enable_irq();
-    }
+    // TODO
+//    __disable_irq();
+//    speedCtrl.P = rxData->controller_P;
+//    speedCtrl.I = rxData->controller_I;
+//    speedCtrl.integral_max = rxData->controller_integral_max;
+//    __enable_irq();
 
-    useSafetyEnableSignal = !!(rxData->flags & MOTOR_PANEL_FLAG_USE_SAFETY_SIGNAL);
+    useSafetyEnableSignal = true;// TODO !!(rxData->flags & MOTOR_PANEL_FLAG_USE_SAFETY_SIGNAL);
 
 }
 
@@ -160,7 +153,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-    HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -186,22 +179,21 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_TIM_IC_Start_IT(tim_rc_recv, chnl_rc_recv);
 
-  uint32_t nextSafetySignalCheckTime = HAL_GetTick();
-  uint32_t nextLedToggleTime         = HAL_GetTick();
-  motorPanelDataIn_t rxData;
-  motorPanelDataOut_t txData;
-
   speedCtrl.desired = 0.0f;
 
   dc_motor_initialize();
   encoder_initialize((encoder_t*)&encoder, ENCODER_MAX_VALUE);
-  pi_controller_initialize((pi_controller_t*)&speedCtrl, SPEED_CTRL_PERIOD_US, SPEED_CTRL_Ti_US, SPEED_CTRL_Kc, SPEED_CTRL_DEADBAND_MPS, -1.0f, 1.0f, SPEED_CTRL_MAX_DELTA);
 
-  motorPanelDataIn_t rxDataBuffer;
-  motorPanelDataOut_t txDataBuffer;
-  panelLink_initialize((panelLink_t*)&panelLink, PanelLinkRole_Slave, uart_cmd,
-      &rxDataBuffer, sizeof(motorPanelDataIn_t), MOTOR_PANEL_LINK_RX_PERIOD_MS,
-      &txDataBuffer, sizeof(motorPanelDataOut_t), MOTOR_PANEL_LINK_TX_PERIOD_MS);
+//  motorPanelDataOut_t txDataBuffer;
+//  panelLink_initialize((panelLink_t*)&panelLink, PanelLinkRole_Active, uart_cmd,
+//      &rxDataBuffer, sizeof(motorPanelDataIn_t), MOTOR_PANEL_LINK_IN_TIMEOUT_MS,
+//      &txDataBuffer, sizeof(motorPanelDataOut_t), MOTOR_PANEL_LINK_OUT_PERIOD_MS);
+
+  bool isConnected = false;
+  uint32_t lastCmdTime               = 0;
+  uint32_t nextSpeedSendTime         = HAL_GetTick();
+  uint32_t nextSafetySignalCheckTime = HAL_GetTick();
+  uint32_t nextLedToggleTime         = HAL_GetTick();
 
   /* USER CODE END 2 */
 
@@ -210,24 +202,52 @@ int main(void)
 
   while (1)
   {
-      panelLink_update((panelLink_t*)&panelLink);
-      const bool isConnected = panelLink_isConnected((const panelLink_t*)&panelLink);
+      const uint32_t currentTime = HAL_GetTick();
 
-      if (HAL_GetTick() >= nextSafetySignalCheckTime) {
-          nextSafetySignalCheckTime += SAFETY_SIGNAL_CHECK_PERIOD_MS;
-          updateMotorEnabled(isConnected);
+      if (currentTime >= nextSafetySignalCheckTime) {
+          nextSafetySignalCheckTime += 10;
+          updateMotorEnabled();
       }
 
-      if (panelLink_readAvailable((panelLink_t*)&panelLink, &rxData)) {
-          handleRxData(&rxData);
+      if (newCmd) {
+          newCmd = false;
+          isConnected = true;
+          lastCmdTime = currentTime;
+          handleRxData(&inData);
       }
 
-      if (panelLink_shouldSend((panelLink_t*)&panelLink)) {
-          fillTxData(&txData);
-          panelLink_send((panelLink_t*)&panelLink, &txData);
+      if (isConnected) {
+          lastConnectedTime = HAL_GetTick();
+          if (currentTime - lastCmdTime > 200) {
+              HAL_UART_AbortReceive_IT(uart_cmd);
+              isConnected = false;
+              targetSpeed_mps = 0.0f;
+              HAL_Delay(5);
+          }
+
+          if (currentTime >= nextSpeedSendTime) {
+              nextSpeedSendTime += 5;
+              fillTxData(&outData);
+              HAL_UART_Transmit_DMA(uart_cmd, (uint8_t*)&outData, sizeof(motorPanelDataOut_t));
+          }
+      } else {
+          char c = '\0';
+          while (c != 'S') {
+              HAL_UART_Receive(uart_cmd, (uint8_t*)&c, 1, 250);
+              HAL_GPIO_TogglePin(gpio_user_led, gpio_pin_user_led);
+          }
+
+          HAL_UART_Transmit_DMA(uart_cmd, (uint8_t*)&outData, sizeof(motorPanelDataOut_t));
+          HAL_Delay(5);
+          HAL_UART_Receive_DMA(uart_cmd, (uint8_t*)&inData, sizeof(motorPanelDataIn_t));
+
+          isConnected = true;
+          lastCmdTime = currentTime;
+          nextSpeedSendTime = currentTime + 5;
+          nextLedToggleTime = currentTime + 500;
       }
 
-      if (HAL_GetTick() >= nextLedToggleTime) {
+      if (currentTime >= nextLedToggleTime) {
           nextLedToggleTime += (isConnected ? 500 : 250);
           HAL_GPIO_TogglePin(gpio_user_led, gpio_pin_user_led);
       }
@@ -300,7 +320,9 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart == uart_cmd) {
-        panelLink_onNewRxData((panelLink_t*)&panelLink);
+        newCmd = true;
+        //panelLink_onNewRxData((panelLink_t*)&panelLink, sizeof(motorPanelDataIn_t) - huart->hdmarx->Instance->CNDTR);
+        //HAL_UART_Receive_DMA(uart_cmd, (uint8_t*)&rxDataBuffer, sizeof(motorPanelDataIn_t));
     }
 }
 
@@ -310,7 +332,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         speed_measured_mps = encoder.last_diff / ENCODER_INCR_PER_MM / (ENCODER_PERIOD_US / 1000.0f);
         distance_mm = encoder.num_incr / ENCODER_INCR_PER_MM;
 
-        speedCtrl.desired = isMotorEnabled ? targetSpeed_mps : 0.0f;
+        speedCtrl.desired = isMotorEnabled && HAL_GetTick() - lastConnectedTime < 500 ? targetSpeed_mps : 0.0f;
         pi_controller_update((pi_controller_t*)&speedCtrl, speed_measured_mps);
         dc_motor_write(speedCtrl.output);
 	}

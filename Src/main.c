@@ -304,7 +304,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         speed_measured_mps = encoder.last_diff / ENCODER_INCR_PER_MM / (ENCODER_PERIOD_US / 1000.0f);
         distance_mm = encoder.num_incr / ENCODER_INCR_PER_MM;
 
-        speedCtrl.desired = isMotorEnabled && HAL_GetTick() - lastConnectedTime < 200 ? targetSpeed_mps : 0.0f;
+        speedCtrl.desired = isMotorEnabled && HAL_GetTick() - lastConnectedTime < 500 ? targetSpeed_mps : 0.0f;
         pi_controller_update((pi_controller_t*)&speedCtrl, speed_measured_mps);
         dc_motor_write(speedCtrl.output);
 	}

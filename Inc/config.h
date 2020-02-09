@@ -1,7 +1,7 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-#define SPEED_CTRL_P                  0.5f
+#define SPEED_CTRL_P                  0.6f
 #define SPEED_CTRL_I                  0.04f
 #define SPEED_CTRL_INTEGRAL_MAX       4.0f
 #define SPEED_CTRL_DEADBAND_MPS       0.01f  // If measured speed is less than this value [m/s], speed controller output will be zero

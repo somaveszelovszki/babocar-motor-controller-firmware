@@ -80,51 +80,46 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 
-void updateMotorEnabled(const bool isConnected) {
-    static const uint32_t BOUNCE_LIMIT = 3;
+static void updateMotorEnabled(void) {
+    static const uint32_t BOUNCE_LIMIT = 5;
     static uint8_t bounce_cntr = 0;
 
     bool enabled = false;
 
-    if (isConnected) {
-        if (useSafetyEnableSignal) {
-            const uint32_t recvPwm = rc_recv_in_speed;
-            const bool en = (recvPwm > 1700 && recvPwm < 2150);
+    if (useSafetyEnableSignal) {
+        const uint32_t recvPwm = rc_recv_in_speed;
+        const bool en = (recvPwm > 1700 && recvPwm < 2150);
 
-            if (en == isMotorEnabled) {
-                enabled = isMotorEnabled;
-                bounce_cntr = 0;
-            } else if (++bounce_cntr > BOUNCE_LIMIT) {
-                enabled = en;
-                bounce_cntr = 0;
-            } else {
-                enabled = isMotorEnabled;
-            }
+        if (en == isMotorEnabled) {
+            enabled = isMotorEnabled;
+            bounce_cntr = 0;
+        } else if (++bounce_cntr > BOUNCE_LIMIT) {
+            enabled = en;
+            bounce_cntr = 0;
         } else {
-            enabled = true;
+            enabled = isMotorEnabled;
         }
     } else {
-        enabled = false;
+        enabled = true;
     }
 
     isMotorEnabled = enabled;
 }
 
-void handleRxData(motorPanelDataIn_t *rxData) {
-    targetSpeed_mps = rxData->targetSpeed_mmps / 1000.0f;
+static void handleRxData(motorPanelDataIn_t *rxData) {
+    __disable_irq();
+    if (rxData->targetSpeed_mmps != 0)
+        targetSpeed_mps = rxData->targetSpeed_mmps / 1000.0f;
 
-    // TODO
-//    __disable_irq();
-//    speedCtrl.P = rxData->controller_P;
-//    speedCtrl.I = rxData->controller_I;
-//    speedCtrl.integral_max = rxData->controller_integral_max;
-//    __enable_irq();
+    speedCtrl.P = rxData->controller_P;
+    speedCtrl.I = rxData->controller_I;
+    speedCtrl.integral_max = rxData->controller_integral_max;
 
-    useSafetyEnableSignal = true;// TODO !!(rxData->flags & MOTOR_PANEL_FLAG_USE_SAFETY_SIGNAL);
-
+    useSafetyEnableSignal = !!(rxData->flags & MOTOR_PANEL_FLAG_USE_SAFETY_SIGNAL);
+    __enable_irq();
 }
 
-void fillTxData(motorPanelDataOut_t *txData) {
+static void fillTxData(motorPanelDataOut_t *txData) {
     txData->distance_mm      = distance_mm;
     txData->actualSpeed_mmps = (int16_t)(speed_measured_mps * 1000);
     txData->isMotorEnabled   = isMotorEnabled;
@@ -170,7 +165,6 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM1_Init();
   MX_TIM14_Init();
-  MX_TIM16_Init();
   MX_TIM17_Init();
   MX_ADC_Init();
   MX_USART1_UART_Init();
@@ -188,10 +182,10 @@ int main(void)
   dc_motor_initialize();
   encoder_initialize((encoder_t*)&encoder, ENCODER_MAX_VALUE);
 
-  motorPanelDataIn_t rxDataBuffer;
+  motorPanelDataIn_t rxDataBuffer1, rxDataBuffer2;
   motorPanelDataOut_t txDataBuffer;
   panelLink_initialize((panelLink_t*)&panelLink, PanelLinkRole_Slave, uart_cmd,
-      &rxDataBuffer, sizeof(motorPanelDataIn_t), MOTOR_PANEL_LINK_IN_TIMEOUT_MS,
+      &rxDataBuffer1, &rxDataBuffer2, sizeof(motorPanelDataIn_t), MOTOR_PANEL_LINK_IN_TIMEOUT_MS,
       &txDataBuffer, sizeof(motorPanelDataOut_t), MOTOR_PANEL_LINK_OUT_PERIOD_MS);
 
   /* USER CODE END 2 */
@@ -218,8 +212,8 @@ int main(void)
       }
 
       if (HAL_GetTick() >= nextSafetySignalCheckTime) {
-          nextSafetySignalCheckTime += 10;
-          updateMotorEnabled(isConnected);
+          nextSafetySignalCheckTime += 20;
+          updateMotorEnabled();
       }
 
       if (HAL_GetTick() >= nextLedToggleTime) {

@@ -28,7 +28,3 @@ extern "C" void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
         spi_SensorTxRxCpltCallback();
     }
 }
-
-extern "C" void onHardFault() {
-    while(1) {}
-}

@@ -1,2 +1,2 @@
-# motor-controller
-Motor controller project
+# babocar-motor-controller-firmware
+Motor controller panel firmware

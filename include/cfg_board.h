@@ -21,8 +21,8 @@ extern TIM_HandleTypeDef htim8;
 #define can_Vehicle                 (&hcan1)
 
 #define tim_DC_Motor                (&htim1)
-#define timChnl_DC_Motor_Brdg1      TIM_CHANNEL_1
-#define timChnl_DC_Motor_Brdg2      TIM_CHANNEL_2
+#define timChnl_DC_Motor_Bridge1    TIM_CHANNEL_1
+#define timChnl_DC_Motor_Bridge2    TIM_CHANNEL_2
 
 #define tim_System                  (&htim2)
 
@@ -33,11 +33,11 @@ extern TIM_HandleTypeDef htim8;
 #define tim_ServoX                  (&htim4)
 #define timChnl_ServoX              TIM_CHANNEL_1
 
-#define tim_RcRecv                  (&htim5)
-#define timChnl_RcRecv1             TIM_CHANNEL_1
-#define timChnl_RcRecv2             TIM_CHANNEL_2
-#define timChnl_RcRecv3             TIM_CHANNEL_3
-#define timChnl_RcRecv4             TIM_CHANNEL_4
+#define tim_RcCtrl                  (&htim5)
+#define timChnl_RcCtrlDirectAccel   TIM_CHANNEL_1
+#define timChnl_RcCtrlDirectSteer   TIM_CHANNEL_2
+#define timChnl_RcCtrlSafetyAccel   TIM_CHANNEL_3
+#define timChnl_RcCtrlSafetySteer   TIM_CHANNEL_4
 
 #define tim_ControlLoop             (&htim7)
 

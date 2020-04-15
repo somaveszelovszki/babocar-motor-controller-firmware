@@ -48,12 +48,15 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-osThreadId SensorTaskHandle;
-uint32_t SensorTaskBuffer[ 1024 ];
-osStaticThreadDef_t SensorTaskControlBlock;
-osThreadId LineCalcTaskHandle;
-uint32_t LineCalcTaskBuffer[ 1024 ];
-osStaticThreadDef_t LineCalcTaskControlBlock;
+osThreadId RemoteControlleHandle;
+uint32_t RemoteControllerTaskBuffer[ 1024 ];
+osStaticThreadDef_t RemoteControllerTaskControlBlock;
+osThreadId VehicleCanTaskHandle;
+uint32_t VehicleCanTaskBuffer[ 1024 ];
+osStaticThreadDef_t VehicleCanTaskControlBlock;
+osThreadId ControlTaskHandle;
+uint32_t ControlTaskBuffer[ 1024 ];
+osStaticThreadDef_t ControlTaskControlBlock;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -61,8 +64,9 @@ void runSensorTask(void);
 void runLineCalcTask(void);
 /* USER CODE END FunctionPrototypes */
 
-void StartSensorTask(void const * argument);
-void StartLineCalcTask(void const * argument);
+void StartRemoteControllerTask(void const * argument);
+void StartVehicleCanTask(void const * argument);
+void StartControlTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -109,13 +113,17 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of SensorTask */
-  osThreadStaticDef(SensorTask, StartSensorTask, osPriorityRealtime, 0, 1024, SensorTaskBuffer, &SensorTaskControlBlock);
-  SensorTaskHandle = osThreadCreate(osThread(SensorTask), NULL);
+  /* definition and creation of RemoteControlle */
+  osThreadStaticDef(RemoteControlle, StartRemoteControllerTask, osPriorityNormal, 0, 1024, RemoteControllerTaskBuffer, &RemoteControllerTaskControlBlock);
+  RemoteControlleHandle = osThreadCreate(osThread(RemoteControlle), NULL);
 
-  /* definition and creation of LineCalcTask */
-  osThreadStaticDef(LineCalcTask, StartLineCalcTask, osPriorityNormal, 0, 1024, LineCalcTaskBuffer, &LineCalcTaskControlBlock);
-  LineCalcTaskHandle = osThreadCreate(osThread(LineCalcTask), NULL);
+  /* definition and creation of VehicleCanTask */
+  osThreadStaticDef(VehicleCanTask, StartVehicleCanTask, osPriorityNormal, 0, 1024, VehicleCanTaskBuffer, &VehicleCanTaskControlBlock);
+  VehicleCanTaskHandle = osThreadCreate(osThread(VehicleCanTask), NULL);
+
+  /* definition and creation of ControlTask */
+  osThreadStaticDef(ControlTask, StartControlTask, osPriorityHigh, 0, 1024, ControlTaskBuffer, &ControlTaskControlBlock);
+  ControlTaskHandle = osThreadCreate(osThread(ControlTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -123,38 +131,63 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_StartSensorTask */
+/* USER CODE BEGIN Header_StartRemoteControllerTask */
 /**
-  * @brief  Function implementing the SensorTask thread.
+  * @brief  Function implementing the RemoteControlle thread.
   * @param  argument: Not used 
   * @retval None
   */
-/* USER CODE END Header_StartSensorTask */
-void StartSensorTask(void const * argument)
+/* USER CODE END Header_StartRemoteControllerTask */
+void StartRemoteControllerTask(void const * argument)
 {
     
     
     
+    
 
-  /* USER CODE BEGIN StartSensorTask */
-  UNUSED(argument);
-  runSensorTask();
-  /* USER CODE END StartSensorTask */
+  /* USER CODE BEGIN StartRemoteControllerTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartRemoteControllerTask */
 }
 
-/* USER CODE BEGIN Header_StartLineCalcTask */
+/* USER CODE BEGIN Header_StartVehicleCanTask */
 /**
-* @brief Function implementing the LineCalcTask thread.
+* @brief Function implementing the VehicleCanTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartLineCalcTask */
-void StartLineCalcTask(void const * argument)
+/* USER CODE END Header_StartVehicleCanTask */
+void StartVehicleCanTask(void const * argument)
 {
-  /* USER CODE BEGIN StartLineCalcTask */
-  UNUSED(argument);
-  runLineCalcTask();
-  /* USER CODE END StartLineCalcTask */
+  /* USER CODE BEGIN StartVehicleCanTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartVehicleCanTask */
+}
+
+/* USER CODE BEGIN Header_StartControlTask */
+/**
+* @brief Function implementing the ControlTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartControlTask */
+void StartControlTask(void const * argument)
+{
+  /* USER CODE BEGIN StartControlTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartControlTask */
 }
 
 /* Private application code --------------------------------------------------*/

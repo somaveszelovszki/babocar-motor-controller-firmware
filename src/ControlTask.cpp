@@ -14,7 +14,7 @@ namespace {
 
 } // namespace
 
-extern "C" void runSensorTask(void) {
+extern "C" void runControlTask(void) {
 
     while (true) {
 

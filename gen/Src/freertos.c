@@ -60,8 +60,9 @@ osStaticThreadDef_t ControlTaskControlBlock;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-void runSensorTask(void);
-void runLineCalcTask(void);
+void runRemoteControllerTask(void);
+void runVehicleCanTask(void);
+void runControlTask(void);
 /* USER CODE END FunctionPrototypes */
 
 void StartRemoteControllerTask(void const * argument);
@@ -146,11 +147,7 @@ void StartRemoteControllerTask(void const * argument)
     
 
   /* USER CODE BEGIN StartRemoteControllerTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+  runRemoteControllerTask();
   /* USER CODE END StartRemoteControllerTask */
 }
 
@@ -164,11 +161,7 @@ void StartRemoteControllerTask(void const * argument)
 void StartVehicleCanTask(void const * argument)
 {
   /* USER CODE BEGIN StartVehicleCanTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+  runVehicleCanTask();
   /* USER CODE END StartVehicleCanTask */
 }
 
@@ -182,11 +175,7 @@ void StartVehicleCanTask(void const * argument)
 void StartControlTask(void const * argument)
 {
   /* USER CODE BEGIN StartControlTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+  runControlTask();
   /* USER CODE END StartControlTask */
 }
 

@@ -19,6 +19,7 @@ extern TIM_HandleTypeDef htim7;
 extern TIM_HandleTypeDef htim8;
 
 #define can_Vehicle                 (&hcan1)
+#define canRxFifo_Vehicle           CAN_RX_FIFO0
 
 #define tim_DC_Motor                (&htim1)
 #define timChnl_DC_Motor_Bridge1    TIM_CHANNEL_1

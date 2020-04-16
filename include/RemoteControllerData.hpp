@@ -6,7 +6,7 @@ struct RemoteControllerData {
 
     enum class channel_t : uint8_t {
         INVALID = 0,
-        DirectDrive,
+        DirectControl,
         SafetyEnable
     };
 

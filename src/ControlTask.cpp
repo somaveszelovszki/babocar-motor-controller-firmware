@@ -23,6 +23,8 @@ extern QueueHandle_t remoteControllerQueue;
 
 namespace {
 
+static constexpr millisecond_t EMERGENCY_BRAKE_DURATION = millisecond_t(700);
+
 hw::DC_Motor dcMotor(tim_DC_Motor, timChnl_DC_Motor_Bridge1, timChnl_DC_Motor_Bridge2, cfg::MOTOR_MAX_DUTY);
 hw::Encoder encoder(tim_Encoder);
 PID_Controller speedCtrl(globals::MotorCtrl_P, globals::MotorCtrl_I, globals::MotorCtrl_D, globals::MotorCtrl_integralMax, -cfg::MOTOR_MAX_DUTY, cfg::MOTOR_MAX_DUTY, 0.01f);
@@ -40,7 +42,9 @@ meter_t currentDistance;
 
 extern "C" void runControlTask(void) {
 
-    static constexpr millisecond_t EMERGENCY_BRAKE_DURATION = millisecond_t(700);
+    micro::waitReady(lateralControlQueue);
+    micro::waitReady(longitudinalControlQueue);
+    micro::waitReady(remoteControllerQueue);
 
     LateralControl lateralControl;
     LongitudinalControl longitudinalControl;

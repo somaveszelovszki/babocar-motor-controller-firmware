@@ -27,10 +27,6 @@ QueueHandle_t longitudinalControlQueue;
 static uint8_t longitudinalControlQueueStorageBuffer[LONGITUDINAL_CONTROL_QUEUE_LENGTH * sizeof(LateralControl)];
 static StaticQueue_t longitudinalControlQueueBuffer;
 
-namespace {
-
-} // namespace
-
 extern "C" void runVehicleCanTask(void) {
 
     lateralControlQueue = xQueueCreateStatic(LATERAL_CONTROL_QUEUE_LENGTH, sizeof(LateralControl), lateralControlQueueStorageBuffer, &lateralControlQueueBuffer);

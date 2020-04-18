@@ -40,7 +40,7 @@ extern "C" void runVehicleCanTask(void) {
 
     canManager.registerHandler(can::LateralControl::id(), [] (const uint8_t * const data) {
         LateralControl lateral;
-        reinterpret_cast<const can::LateralControl*>(data)->acquire(lateral.frontSteeringAngle, lateral.rearSteeringAngle, lateral.extraServoAngle);
+        reinterpret_cast<const can::LateralControl*>(data)->acquire(lateral.frontWheelAngle, lateral.rearWheelAngle, lateral.extraServoAngle);
         xQueueOverwrite(lateralControlQueue, &lateral);
     });
 

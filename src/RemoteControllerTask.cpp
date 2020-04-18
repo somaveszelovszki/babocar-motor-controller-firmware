@@ -13,7 +13,7 @@
 using namespace micro;
 
 #define REMOTE_CONTROLLER_QUEUE_LENGTH 1
-QueueHandle_t remoteControllerQueue;
+QueueHandle_t remoteControllerQueue = nullptr;
 static uint8_t remoteControllerQueueStorageBuffer[REMOTE_CONTROLLER_QUEUE_LENGTH * sizeof(RemoteControllerData)];
 static StaticQueue_t remoteControllerQueueBuffer;
 

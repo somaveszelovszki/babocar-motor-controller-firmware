@@ -18,12 +18,12 @@ using namespace micro;
 #include <functional>
 
 #define LATERAL_CONTROL_QUEUE_LENGTH 1
-QueueHandle_t lateralControlQueue;
+QueueHandle_t lateralControlQueue = nullptr;
 static uint8_t lateralControlQueueStorageBuffer[LATERAL_CONTROL_QUEUE_LENGTH * sizeof(LateralControl)];
 static StaticQueue_t lateralControlQueueBuffer;
 
 #define LONGITUDINAL_CONTROL_QUEUE_LENGTH 1
-QueueHandle_t longitudinalControlQueue;
+QueueHandle_t longitudinalControlQueue = nullptr;
 static uint8_t longitudinalControlQueueStorageBuffer[LONGITUDINAL_CONTROL_QUEUE_LENGTH * sizeof(LateralControl)];
 static StaticQueue_t longitudinalControlQueueBuffer;
 

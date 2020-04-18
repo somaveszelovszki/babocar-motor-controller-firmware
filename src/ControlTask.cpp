@@ -28,10 +28,10 @@ hw::Encoder encoder(tim_Encoder);
 PID_Controller speedCtrl(globals::MotorCtrl_P, globals::MotorCtrl_I, globals::MotorCtrl_D, globals::MotorCtrl_integralMax, -cfg::MOTOR_MAX_DUTY, cfg::MOTOR_MAX_DUTY, 0.01f);
 
 hw::SteeringServo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringServo, cfg::FRONT_STEERING_SERVO_PWM0, cfg::FRONT_STEERING_SERVO_PWM180,
-    globals::frontSteeringServoOffset, cfg::FRONT_WHEEL_ANGLE_D_MAX, cfg::SERVO_WHEEL_TRANSFER_RATE);
+    globals::frontWheelOffset, globals::frontWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
 
 hw::SteeringServo rearSteeringServo(tim_SteeringServo, timChnl_RearSteeringServo, cfg::REAR_STEERING_SERVO_PWM0, cfg::REAR_STEERING_SERVO_PWM180,
-    globals::rearSteeringServoOffset, cfg::REAR_WHEEL_ANGLE_D_MAX, cfg::SERVO_WHEEL_TRANSFER_RATE);
+    globals::rearWheelOffset, globals::rearWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
 
 m_per_sec_t currentSpeed;
 meter_t currentDistance;
@@ -68,8 +68,10 @@ extern "C" void runControlTask(void) {
             remoteControlWd.reset();
         }
 
-        frontSteeringServo.setOffset(globals::frontSteeringServoOffset);
-        rearSteeringServo.setOffset(globals::rearSteeringServoOffset);
+        frontSteeringServo.setWheelOffset(globals::frontWheelOffset);
+        frontSteeringServo.setWheelMaxDelta(globals::frontWheelMaxDelta);
+        rearSteeringServo.setWheelOffset(globals::rearWheelOffset);
+        rearSteeringServo.setWheelMaxDelta(globals::rearWheelMaxDelta);
 
         switch (remoteControllerData.activeChannel) {
 
@@ -78,8 +80,8 @@ extern "C" void runControlTask(void) {
             speedRamp.startTime  = getExactTime();
             speedRamp.duration   = millisecond_t(0);
 
-            frontSteeringServo.writeWheelAngle(map(remoteControllerData.steering, -1.0f, 1.0f, -cfg::FRONT_WHEEL_ANGLE_D_MAX, cfg::FRONT_WHEEL_ANGLE_D_MAX));
-            rearSteeringServo.writeWheelAngle(map(remoteControllerData.steering, -1.0f, 1.0f, cfg::FRONT_WHEEL_ANGLE_D_MAX, -cfg::FRONT_WHEEL_ANGLE_D_MAX));
+            frontSteeringServo.writeWheelAngle(map(remoteControllerData.steering, -1.0f, 1.0f, -frontSteeringServo.wheelMaxDelta(), frontSteeringServo.wheelMaxDelta()));
+            rearSteeringServo.writeWheelAngle(map(remoteControllerData.steering, -1.0f, 1.0f, rearSteeringServo.wheelMaxDelta(), -rearSteeringServo.wheelMaxDelta()));
             break;
 
         case RemoteControllerData::channel_t::SafetyEnable:

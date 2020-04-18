@@ -50,9 +50,14 @@ extern "C" void runVehicleCanTask(void) {
         xQueueOverwrite(lateralControlQueue, &longitudinal);
     });
 
-    canManager.registerHandler(can::SetServoOffsets::id(), [&canManager] (const uint8_t * const data) {
-        reinterpret_cast<const can::SetServoOffsets*>(data)->acquire(globals::frontSteeringServoOffset, globals::rearSteeringServoOffset, globals::extraServoOffset);
-        canManager.send(can::ServoOffsets(globals::frontSteeringServoOffset, globals::rearSteeringServoOffset, globals::extraServoOffset));
+    canManager.registerHandler(can::SetFrontWheelParams::id(), [&canManager] (const uint8_t * const data) {
+        reinterpret_cast<const can::SetFrontWheelParams*>(data)->acquire(globals::frontWheelOffset, globals::frontWheelMaxDelta);
+        canManager.send(can::FrontWheelParams(globals::frontWheelOffset, globals::frontWheelMaxDelta));
+    });
+
+    canManager.registerHandler(can::SetRearWheelParams::id(), [&canManager] (const uint8_t * const data) {
+        reinterpret_cast<const can::SetRearWheelParams*>(data)->acquire(globals::rearWheelOffset, globals::rearWheelMaxDelta);
+        canManager.send(can::RearWheelParams(globals::rearWheelOffset, globals::rearWheelMaxDelta));
     });
 
     while (true) {

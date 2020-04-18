@@ -28,6 +28,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <micro/panel/panelVersion.h>
+#include <cfg_board.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,7 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define PANEL_VERSION   0x00
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -89,7 +90,9 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  panelVersion_check(PANEL_VERSION);
+  if (PANEL_VERSION != panelVersion_get()) {
+      Error_Handler();
+  }
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */

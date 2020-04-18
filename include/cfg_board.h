@@ -9,6 +9,8 @@ extern "C" {
 #include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_tim.h"
 
+#include <stdint.h>
+
 extern CAN_HandleTypeDef hcan1;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
@@ -45,6 +47,8 @@ extern TIM_HandleTypeDef htim8;
 #define tim_Encoder                 (&htim8)
 #define timChnl_RcRecv1             TIM_CHANNEL_1
 #define timChnl_RcRecv2             TIM_CHANNEL_2
+
+#define PANEL_VERSION               0x02
 
 #ifdef __cplusplus
 }

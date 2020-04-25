@@ -1,10 +1,12 @@
 #pragma once
 
+#include <micro/utils/CarProps.hpp>
 #include <micro/utils/units.hpp>
 
 namespace globals {
 
 extern bool useSafetyEnableSignal;
+extern micro::CarProps car;
 extern micro::radian_t frontWheelOffset;
 extern micro::radian_t frontWheelMaxDelta;
 extern micro::radian_t rearWheelOffset;

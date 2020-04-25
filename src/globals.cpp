@@ -3,6 +3,7 @@
 namespace globals {
 
 bool useSafetyEnableSignal         = true;
+micro::CarProps car                = micro::CarProps();
 micro::radian_t frontWheelOffset   = micro::radian_t(0);
 micro::radian_t frontWheelMaxDelta = micro::radian_t(0);
 micro::radian_t rearWheelOffset    = micro::radian_t(0);

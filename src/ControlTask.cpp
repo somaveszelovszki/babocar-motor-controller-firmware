@@ -30,13 +30,10 @@ hw::Encoder encoder(tim_Encoder);
 PID_Controller speedCtrl(globals::MotorCtrl_P, globals::MotorCtrl_I, globals::MotorCtrl_D, globals::MotorCtrl_integralMax, -cfg::MOTOR_MAX_DUTY, cfg::MOTOR_MAX_DUTY, 0.01f);
 
 hw::SteeringServo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringServo, cfg::FRONT_STEERING_SERVO_PWM0, cfg::FRONT_STEERING_SERVO_PWM180,
-    globals::frontWheelOffset, globals::frontWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
+    cfg::SERVO_MAX_ANGULAR_VELO, globals::frontWheelOffset, globals::frontWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
 
 hw::SteeringServo rearSteeringServo(tim_SteeringServo, timChnl_RearSteeringServo, cfg::REAR_STEERING_SERVO_PWM0, cfg::REAR_STEERING_SERVO_PWM180,
-    globals::rearWheelOffset, globals::rearWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
-
-m_per_sec_t currentSpeed;
-meter_t currentDistance;
+    cfg::SERVO_MAX_ANGULAR_VELO, globals::rearWheelOffset, globals::rearWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
 
 } // namespace
 
@@ -91,7 +88,7 @@ extern "C" void runControlTask(void) {
         case RemoteControllerData::channel_t::SafetyEnable:
             if (globals::isControlTaskOk && isBtw(remoteControllerData.acceleration, 0.5f, 1.0f)) {
                 if (longitudinalControl.speed != speedRamp.targetSpeed || longitudinalControl.rampTime != speedRamp.duration) {
-                    speedRamp.startSpeed  = currentSpeed;
+                    speedRamp.startSpeed  = globals::car.speed;
                     speedRamp.targetSpeed = longitudinalControl.speed;
                     speedRamp.startTime   = getExactTime();
                     speedRamp.duration    = longitudinalControl.rampTime;
@@ -101,7 +98,7 @@ extern "C" void runControlTask(void) {
                 rearSteeringServo.writeWheelAngle(lateralControl.rearWheelAngle);
             } else {
                 if (speedRamp.targetSpeed != m_per_sec_t(0) || speedRamp.duration != EMERGENCY_BRAKE_DURATION) {
-                    speedRamp.startSpeed  = currentSpeed;
+                    speedRamp.startSpeed  = globals::car.speed;
                     speedRamp.targetSpeed = m_per_sec_t(0);
                     speedRamp.startTime   = getExactTime();
                     speedRamp.duration    = EMERGENCY_BRAKE_DURATION;
@@ -118,6 +115,9 @@ extern "C" void runControlTask(void) {
 
         speedCtrl.desired = map(getExactTime(), speedRamp.startTime, speedRamp.startTime + speedRamp.duration, speedRamp.startSpeed, speedRamp.targetSpeed).get();
 
+        globals::car.frontWheelAngle = frontSteeringServo.wheelAngle();
+        globals::car.rearWheelAngle  = rearSteeringServo.wheelAngle();
+
         vTaskDelay(1);
     }
 
@@ -131,10 +131,10 @@ void tim_ControlLoop_PeriodElapsedCallback() {
     const millisecond_t now = getExactTime();
     encoder.update();
 
-    currentSpeed = encoder.lastDiff() * cfg::ENCODER_INCR_DISTANCE / (now - lastUpdateTime);
-    currentDistance = encoder.numIncr() * cfg::ENCODER_INCR_DISTANCE;
+    globals::car.speed = encoder.lastDiff() * cfg::ENCODER_INCR_DISTANCE / (now - lastUpdateTime);
+    globals::car.distance = encoder.numIncr() * cfg::ENCODER_INCR_DISTANCE;
 
-    speedCtrl.update(currentSpeed.get());
+    speedCtrl.update(globals::car.speed.get());
     dcMotor.write(speedCtrl.output());
 
     lastUpdateTime = now;

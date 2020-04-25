@@ -56,10 +56,21 @@ extern "C" void runVehicleCanTask(void) {
         canManager.send(can::RearWheelParams(globals::rearWheelOffset, globals::rearWheelMaxDelta));
     });
 
+    Timer lateralStateTimer(can::LateralState::period());
+    Timer longitudinalStateTimer(can::LongitudinalControl::period());
+
     while (true) {
         globals::isVehicleCanTaskOk = !canManager.hasRxTimedOut();
 
         canManager.handleIncomingFrames();
+
+        if (lateralStateTimer.checkTimeout()) {
+            canManager.send(can::LateralState(globals::car.frontWheelAngle, globals::car.rearWheelAngle, radian_t(0)));
+        }
+
+        if (longitudinalStateTimer.checkTimeout()) {
+            canManager.send(can::LongitudinalState(globals::car.speed, globals::car.distance));
+        }
 
         vTaskDelay(1);
     }

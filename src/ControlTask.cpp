@@ -23,8 +23,6 @@ extern QueueHandle_t remoteControllerQueue;
 
 namespace {
 
-static constexpr millisecond_t EMERGENCY_BRAKE_DURATION = millisecond_t(700);
-
 hw::DC_Motor dcMotor(tim_DC_Motor, timChnl_DC_Motor_Bridge1, timChnl_DC_Motor_Bridge2, cfg::MOTOR_MAX_DUTY);
 hw::Encoder encoder(tim_Encoder);
 PID_Controller speedCtrl(globals::MotorCtrl_P, globals::MotorCtrl_I, globals::MotorCtrl_D, globals::MotorCtrl_integralMax, -cfg::MOTOR_MAX_DUTY, cfg::MOTOR_MAX_DUTY, 0.01f);
@@ -97,11 +95,11 @@ extern "C" void runControlTask(void) {
                 frontSteeringServo.writeWheelAngle(lateralControl.frontWheelAngle);
                 rearSteeringServo.writeWheelAngle(lateralControl.rearWheelAngle);
             } else {
-                if (speedRamp.targetSpeed != m_per_sec_t(0) || speedRamp.duration != EMERGENCY_BRAKE_DURATION) {
+                if (speedRamp.targetSpeed != m_per_sec_t(0) || speedRamp.duration != cfg::EMERGENCY_BRAKE_DURATION) {
                     speedRamp.startSpeed  = globals::car.speed;
                     speedRamp.targetSpeed = m_per_sec_t(0);
                     speedRamp.startTime   = getExactTime();
-                    speedRamp.duration    = EMERGENCY_BRAKE_DURATION;
+                    speedRamp.duration    = cfg::EMERGENCY_BRAKE_DURATION;
                 }
 
                 frontSteeringServo.writeWheelAngle(radian_t(0));

@@ -51,9 +51,6 @@
 osThreadId RemoteControlleHandle;
 uint32_t RemoteControllerTaskBuffer[ 1024 ];
 osStaticThreadDef_t RemoteControllerTaskControlBlock;
-osThreadId VehicleCanTaskHandle;
-uint32_t VehicleCanTaskBuffer[ 1024 ];
-osStaticThreadDef_t VehicleCanTaskControlBlock;
 osThreadId ControlTaskHandle;
 uint32_t ControlTaskBuffer[ 1024 ];
 osStaticThreadDef_t ControlTaskControlBlock;
@@ -66,7 +63,6 @@ void runControlTask(void);
 /* USER CODE END FunctionPrototypes */
 
 void StartRemoteControllerTask(void const * argument);
-void StartVehicleCanTask(void const * argument);
 void StartControlTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -118,10 +114,6 @@ void MX_FREERTOS_Init(void) {
   osThreadStaticDef(RemoteControlle, StartRemoteControllerTask, osPriorityNormal, 0, 1024, RemoteControllerTaskBuffer, &RemoteControllerTaskControlBlock);
   RemoteControlleHandle = osThreadCreate(osThread(RemoteControlle), NULL);
 
-  /* definition and creation of VehicleCanTask */
-  osThreadStaticDef(VehicleCanTask, StartVehicleCanTask, osPriorityNormal, 0, 1024, VehicleCanTaskBuffer, &VehicleCanTaskControlBlock);
-  VehicleCanTaskHandle = osThreadCreate(osThread(VehicleCanTask), NULL);
-
   /* definition and creation of ControlTask */
   osThreadStaticDef(ControlTask, StartControlTask, osPriorityHigh, 0, 1024, ControlTaskBuffer, &ControlTaskControlBlock);
   ControlTaskHandle = osThreadCreate(osThread(ControlTask), NULL);
@@ -144,25 +136,10 @@ void StartRemoteControllerTask(void const * argument)
     
     
     
-    
 
   /* USER CODE BEGIN StartRemoteControllerTask */
   runRemoteControllerTask();
   /* USER CODE END StartRemoteControllerTask */
-}
-
-/* USER CODE BEGIN Header_StartVehicleCanTask */
-/**
-* @brief Function implementing the VehicleCanTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartVehicleCanTask */
-void StartVehicleCanTask(void const * argument)
-{
-  /* USER CODE BEGIN StartVehicleCanTask */
-  runVehicleCanTask();
-  /* USER CODE END StartVehicleCanTask */
 }
 
 /* USER CODE BEGIN Header_StartControlTask */

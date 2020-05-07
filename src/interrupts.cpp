@@ -7,6 +7,7 @@ extern void tim_RcCtrlDirectSteer_IC_CaptureCallback();
 extern void tim_RcCtrlSafetyAccel_IC_CaptureCallback();
 extern void tim_RcCtrlSafetySteer_IC_CaptureCallback();
 extern void tim_ControlLoop_PeriodElapsedCallback();
+extern void micro_Vehicle_Can_RxFifoMsgPendingCallback();
 
 namespace {
 
@@ -39,5 +40,11 @@ extern "C" void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 extern "C" void micro_tim_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim == tim_ControlLoop) {
         tim_ControlLoop_PeriodElapsedCallback();
+    }
+}
+
+extern "C" void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
+    if (hcan == can_Vehicle) {
+        micro_Vehicle_Can_RxFifoMsgPendingCallback();
     }
 }

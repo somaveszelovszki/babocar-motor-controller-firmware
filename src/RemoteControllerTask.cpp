@@ -3,7 +3,6 @@
 #include <micro/sensor/Filter.hpp>
 
 #include <cfg_board.h>
-#include <globals.hpp>
 #include <RemoteControllerData.hpp>
 
 #include <FreeRTOS.h>

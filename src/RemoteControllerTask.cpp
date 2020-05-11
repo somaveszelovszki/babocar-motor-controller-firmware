@@ -1,20 +1,13 @@
-#include <micro/utils/state.hpp>
 #include <micro/math/numeric.hpp>
+#include <micro/port/task.hpp>
 #include <micro/sensor/Filter.hpp>
 
 #include <cfg_board.h>
 #include <RemoteControllerData.hpp>
 
-#include <FreeRTOS.h>
-#include <queue.h>
-#include <task.h>
-
 using namespace micro;
 
-#define REMOTE_CONTROLLER_QUEUE_LENGTH 1
-QueueHandle_t remoteControllerQueue = nullptr;
-static uint8_t remoteControllerQueueStorageBuffer[REMOTE_CONTROLLER_QUEUE_LENGTH * sizeof(RemoteControllerData)];
-static StaticQueue_t remoteControllerQueueBuffer;
+queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
 namespace {
 
@@ -66,16 +59,12 @@ void fillRemoteControllerData(RemoteControllerData& remoteControllerData, const 
 
 extern "C" void runRemoteControllerTask(void) {
 
-    remoteControllerQueue = xQueueCreateStatic(REMOTE_CONTROLLER_QUEUE_LENGTH, sizeof(RemoteControllerData), remoteControllerQueueStorageBuffer, &remoteControllerQueueBuffer);
-
     while (true) {
         RemoteControllerData remoteControllerData;
         fillRemoteControllerData(remoteControllerData, getActiveChannel());
-        xQueueOverwrite(remoteControllerQueue, &remoteControllerData);
-        vTaskDelay(20);
+        remoteControllerQueue.overwrite(remoteControllerData);
+        os_delay(20);
     }
-
-    vTaskDelete(nullptr);
 }
 
 void tim_RcCtrlDirectAccel_IC_CaptureCallback() {

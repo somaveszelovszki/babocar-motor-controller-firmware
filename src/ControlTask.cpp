@@ -19,7 +19,7 @@
 
 using namespace micro;
 
-extern QueueHandle_t remoteControllerQueue;
+extern queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
 CanManager vehicleCanManager(can_Vehicle, canRxFifo_Vehicle, millisecond_t(50));
 
@@ -52,8 +52,6 @@ hw::SteeringServo rearSteeringServo(tim_SteeringServo, timChnl_RearSteeringServo
 } // namespace
 
 extern "C" void runControlTask(void) {
-
-    micro::waitReady(remoteControllerQueue);
 
     RemoteControllerData remoteControllerData;
 
@@ -106,7 +104,7 @@ extern "C" void runControlTask(void) {
             vehicleCanFrameHandler.handleFrame(rxCanFrame);
         }
 
-        if (xQueueReceive(remoteControllerQueue, &remoteControllerData, 0)) {
+        if (remoteControllerQueue.receive(remoteControllerData, millisecond_t(0))) {
             remoteControlWd.reset();
         }
 
@@ -159,10 +157,8 @@ extern "C" void runControlTask(void) {
         car.frontWheelAngle = frontSteeringServo.wheelAngle();
         car.rearWheelAngle  = rearSteeringServo.wheelAngle();
 
-        vTaskDelay(1);
+        os_delay(1);
     }
-
-    vTaskDelete(nullptr);
 }
 
 void tim_ControlLoop_PeriodElapsedCallback() {

@@ -37,11 +37,10 @@ micro::radian_t extraServoMaxDelta = micro::radian_t(0);
 float MotorCtrl_P                  = 0.0f; // TODO
 float MotorCtrl_I                  = 0.0f;
 float MotorCtrl_D                  = 0.0f;
-float MotorCtrl_integralMax        = 4.0f;
 
 hw::DC_Motor dcMotor(tim_DC_Motor, timChnl_DC_Motor_Bridge1, timChnl_DC_Motor_Bridge2, cfg::MOTOR_MAX_DUTY);
 hw::Encoder encoder(tim_Encoder);
-PID_Controller speedCtrl(MotorCtrl_P, MotorCtrl_I, MotorCtrl_D, MotorCtrl_integralMax, -cfg::MOTOR_MAX_DUTY, cfg::MOTOR_MAX_DUTY, 0.01f);
+PID_Controller speedCtrl({ MotorCtrl_P, MotorCtrl_I, MotorCtrl_D }, cfg::MOTOR_MAX_DUTY, 0.01f);
 
 hw::SteeringServo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringServo, cfg::FRONT_STEERING_SERVO_PWM0, cfg::FRONT_STEERING_SERVO_PWM180,
     cfg::SERVO_MAX_ANGULAR_VELO, frontWheelOffset, frontWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);

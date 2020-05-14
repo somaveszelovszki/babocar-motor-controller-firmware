@@ -34,13 +34,12 @@ micro::radian_t rearWheelMaxDelta  = micro::radian_t(0);
 micro::radian_t extraServoOffset   = micro::radian_t(0);
 micro::radian_t extraServoMaxDelta = micro::radian_t(0);
 
-float MotorCtrl_P                  = 0.0f; // TODO
-float MotorCtrl_I                  = 0.0f;
-float MotorCtrl_D                  = 0.0f;
+float motorCtrl_P = 0.0f; // TODO
+float motorCtrl_I = 0.0f;
 
 hw::DC_Motor dcMotor(tim_DC_Motor, timChnl_DC_Motor_Bridge1, timChnl_DC_Motor_Bridge2, cfg::MOTOR_MAX_DUTY);
 hw::Encoder encoder(tim_Encoder);
-PID_Controller speedCtrl({ MotorCtrl_P, MotorCtrl_I, MotorCtrl_D }, cfg::MOTOR_MAX_DUTY, 0.01f);
+PID_Controller speedCtrl({ motorCtrl_P, motorCtrl_I, 0.0f }, cfg::MOTOR_MAX_DUTY, 0.01f);
 
 hw::SteeringServo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringServo, cfg::FRONT_STEERING_SERVO_PWM0, cfg::FRONT_STEERING_SERVO_PWM180,
     cfg::SERVO_MAX_ANGULAR_VELO, frontWheelOffset, frontWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
@@ -80,6 +79,10 @@ extern "C" void runControlTask(void) {
     vehicleCanFrameHandler.registerHandler(can::LongitudinalControl::id(), [&longitudinalControl] (const uint8_t * const data) {
         LongitudinalControl longitudinal;
         reinterpret_cast<const can::LongitudinalControl*>(data)->acquire(longitudinalControl.speed, useSafetyEnableSignal, longitudinalControl.rampTime);
+    });
+
+    vehicleCanFrameHandler.registerHandler(can::SetMotorControlParams::id(), [] (const uint8_t * const data) {
+        reinterpret_cast<const can::SetMotorControlParams*>(data)->acquire(motorCtrl_P, motorCtrl_I);
     });
 
     vehicleCanFrameHandler.registerHandler(can::SetFrontWheelParams::id(), [] (const uint8_t * const data) {

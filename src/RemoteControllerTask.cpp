@@ -1,5 +1,5 @@
 #include <micro/debug/DebugLed.hpp>
-#include <micro/debug/taskMonitor.hpp>
+#include <micro/debug/SystemManager.hpp>
 #include <micro/math/numeric.hpp>
 #include <micro/port/task.hpp>
 #include <micro/sensor/Filter.hpp>
@@ -67,7 +67,7 @@ void fillRemoteControllerData(RemoteControllerData& remoteControllerData, const 
 
 extern "C" void runRemoteControllerTask(void) {
 
-    TaskMonitor::instance().registerTask();
+    SystemManager::instance().registerTask();
 
     RemoteControllerData remoteControllerData;
 
@@ -76,7 +76,7 @@ extern "C" void runRemoteControllerTask(void) {
         fillRemoteControllerData(remoteControllerData, activeChannel);
         remoteControllerQueue.overwrite(remoteControllerData);
 
-        TaskMonitor::instance().notify(activeChannel != RemoteControllerData::channel_t::INVALID);
+        SystemManager::instance().notify(activeChannel != RemoteControllerData::channel_t::INVALID);
         os_delay(20);
     }
 }

@@ -1,5 +1,5 @@
 #include <micro/debug/DebugLed.hpp>
-#include <micro/debug/taskMonitor.hpp>
+#include <micro/debug/SystemManager.hpp>
 #include <micro/hw/DC_Motor.hpp>
 #include <micro/hw/Encoder.hpp>
 #include <micro/hw/SteeringServo.hpp>
@@ -107,7 +107,7 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
 
 extern "C" void runControlTask(void) {
 
-    TaskMonitor::instance().registerTask();
+    SystemManager::instance().registerTask();
 
     canFrame_t rxCanFrame;
     CanFrameHandler vehicleCanFrameHandler;
@@ -168,7 +168,7 @@ extern "C" void runControlTask(void) {
         car.frontWheelAngle = frontSteeringServo.wheelAngle();
         car.rearWheelAngle  = rearSteeringServo.wheelAngle();
 
-        TaskMonitor::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
+        SystemManager::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
         os_delay(1);
     }
 }

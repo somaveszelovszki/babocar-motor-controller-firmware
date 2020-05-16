@@ -54,16 +54,20 @@ osStaticThreadDef_t RemoteControllerTaskControlBlock;
 osThreadId ControlTaskHandle;
 uint32_t ControlTaskBuffer[ 1024 ];
 osStaticThreadDef_t ControlTaskControlBlock;
+osThreadId DebugTaskHandle;
+uint32_t DebugTaskBuffer[ 1024 ];
+osStaticThreadDef_t DebugTaskControlBlock;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 void runRemoteControllerTask(void);
-void runVehicleCanTask(void);
 void runControlTask(void);
+void runDebugTask(void);
 /* USER CODE END FunctionPrototypes */
 
 void StartRemoteControllerTask(void const * argument);
 void StartControlTask(void const * argument);
+void StartDebugTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -118,6 +122,10 @@ void MX_FREERTOS_Init(void) {
   osThreadStaticDef(ControlTask, StartControlTask, osPriorityHigh, 0, 1024, ControlTaskBuffer, &ControlTaskControlBlock);
   ControlTaskHandle = osThreadCreate(osThread(ControlTask), NULL);
 
+  /* definition and creation of DebugTask */
+  osThreadStaticDef(DebugTask, StartDebugTask, osPriorityLow, 0, 1024, DebugTaskBuffer, &DebugTaskControlBlock);
+  DebugTaskHandle = osThreadCreate(osThread(DebugTask), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -133,6 +141,7 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartRemoteControllerTask */
 void StartRemoteControllerTask(void const * argument)
 {
+    
     
     
     
@@ -154,6 +163,20 @@ void StartControlTask(void const * argument)
   /* USER CODE BEGIN StartControlTask */
   runControlTask();
   /* USER CODE END StartControlTask */
+}
+
+/* USER CODE BEGIN Header_StartDebugTask */
+/**
+* @brief Function implementing the DebugTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartDebugTask */
+void StartDebugTask(void const * argument)
+{
+  /* USER CODE BEGIN StartDebugTask */
+  runDebugTask();
+  /* USER CODE END StartDebugTask */
 }
 
 /* Private application code --------------------------------------------------*/

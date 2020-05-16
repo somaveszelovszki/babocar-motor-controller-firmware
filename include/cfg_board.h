@@ -6,22 +6,26 @@ extern "C" {
 #endif // __cplusplus
 
 #include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_can.h"
 #include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_tim.h"
+#include "stm32f4xx_hal_uart.h"
 
-#include <stdint.h>
-
-extern CAN_HandleTypeDef hcan1;
-extern TIM_HandleTypeDef htim1;
-extern TIM_HandleTypeDef htim2;
-extern TIM_HandleTypeDef htim3;
-extern TIM_HandleTypeDef htim4;
-extern TIM_HandleTypeDef htim5;
-extern TIM_HandleTypeDef htim7;
-extern TIM_HandleTypeDef htim8;
+extern CAN_HandleTypeDef  hcan1;
+extern TIM_HandleTypeDef  htim1;
+extern TIM_HandleTypeDef  htim2;
+extern TIM_HandleTypeDef  htim3;
+extern TIM_HandleTypeDef  htim4;
+extern TIM_HandleTypeDef  htim5;
+extern TIM_HandleTypeDef  htim7;
+extern TIM_HandleTypeDef  htim8;
+extern UART_HandleTypeDef huart4;
 
 #define can_Vehicle                 (&hcan1)
 #define canRxFifo_Vehicle           CAN_RX_FIFO0
+
+#define gpio_Led                    GPIOA
+#define gpioPin_Led                 5 // TODO
 
 #define tim_DC_Motor                (&htim1)
 #define timChnl_DC_Motor_Bridge1    TIM_CHANNEL_1
@@ -47,6 +51,8 @@ extern TIM_HandleTypeDef htim8;
 #define tim_Encoder                 (&htim8)
 #define timChnl_RcRecv1             TIM_CHANNEL_1
 #define timChnl_RcRecv2             TIM_CHANNEL_2
+
+#define uart_Debug                  (&huart4)
 
 #define PANEL_VERSION               0x02
 

@@ -1,3 +1,5 @@
+#include <micro/debug/DebugLed.hpp>
+#include <micro/debug/taskMonitor.hpp>
 #include <micro/math/numeric.hpp>
 #include <micro/port/task.hpp>
 #include <micro/sensor/Filter.hpp>
@@ -36,7 +38,11 @@ void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, RemoteInput::
 }
 
 RemoteControllerData::channel_t getActiveChannel() {
-    return directControl.timestamp() > safetyEnable.timestamp() ? RemoteControllerData::channel_t::DirectControl : RemoteControllerData::channel_t::SafetyEnable;
+    return getTime() - max(directControl.timestamp(), safetyEnable.timestamp()) < millisecond_t(50) ?
+        directControl.timestamp() > safetyEnable.timestamp() ?
+            RemoteControllerData::channel_t::DirectControl :
+            RemoteControllerData::channel_t::SafetyEnable :
+        RemoteControllerData::channel_t::INVALID;
 }
 
 void fillRemoteControllerData(RemoteControllerData& remoteControllerData, const RemoteControllerData::channel_t activeChannel) {
@@ -51,6 +57,8 @@ void fillRemoteControllerData(RemoteControllerData& remoteControllerData, const 
         remoteControllerData.steering     = safetyEnable.steeringFilter.value();
         break;
     default:
+        remoteControllerData.acceleration = 0.0f;
+        remoteControllerData.steering     = 0.0f;
         break;
     }
 }
@@ -59,10 +67,16 @@ void fillRemoteControllerData(RemoteControllerData& remoteControllerData, const 
 
 extern "C" void runRemoteControllerTask(void) {
 
+    TaskMonitor::instance().registerTask();
+
+    RemoteControllerData remoteControllerData;
+
     while (true) {
-        RemoteControllerData remoteControllerData;
-        fillRemoteControllerData(remoteControllerData, getActiveChannel());
+        const RemoteControllerData::channel_t activeChannel = getActiveChannel();
+        fillRemoteControllerData(remoteControllerData, activeChannel);
         remoteControllerQueue.overwrite(remoteControllerData);
+
+        TaskMonitor::instance().notify(activeChannel != RemoteControllerData::channel_t::INVALID);
         os_delay(20);
     }
 }

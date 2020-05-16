@@ -1,16 +1,18 @@
+#include <micro/debug/DebugLed.hpp>
+#include <micro/debug/taskMonitor.hpp>
 #include <micro/hw/DC_Motor.hpp>
 #include <micro/hw/Encoder.hpp>
 #include <micro/hw/SteeringServo.hpp>
 #include <micro/control/PID_Controller.hpp>
+#include <micro/control/ramp.hpp>
 #include <micro/panel/CanManager.hpp>
 #include <micro/port/task.hpp>
-#include <micro/utils/timer.hpp>
 #include <micro/utils/CarProps.hpp>
+#include <micro/utils/state.hpp>
+#include <micro/utils/timer.hpp>
 
 #include <cfg_board.h>
 #include <cfg_car.hpp>
-#include <LateralControl.hpp>
-#include <LongitudinalControl.hpp>
 #include <RemoteControllerData.hpp>
 
 #include <FreeRTOS.h>
@@ -34,11 +36,29 @@ micro::radian_t rearWheelMaxDelta  = micro::radian_t(0);
 micro::radian_t extraServoOffset   = micro::radian_t(0);
 micro::radian_t extraServoMaxDelta = micro::radian_t(0);
 
-PID_Params speedCtrlParams;
+struct LateralControl {
+    micro::radian_t frontWheelAngle;
+    micro::radian_t rearWheelAngle;
+    micro::radian_t extraServoAngle;
+};
+
+struct LongitudinalControl {
+    micro::m_per_sec_t speed;
+    micro::millisecond_t rampTime;
+};
+
+struct ControlData {
+    state_t<LateralControl> lat;
+    state_t<LongitudinalControl> lon;
+};
+
+PID_Params speedControllerParams;
+
+ramp_t<m_per_sec_t> speedRamp;
 
 hw::DC_Motor dcMotor(tim_DC_Motor, timChnl_DC_Motor_Bridge1, timChnl_DC_Motor_Bridge2, cfg::MOTOR_MAX_DUTY);
 hw::Encoder encoder(tim_Encoder);
-PID_Controller speedCtrl(speedCtrlParams, cfg::MOTOR_MAX_DUTY, 0.01f);
+PID_Controller speedController(speedControllerParams, cfg::MOTOR_MAX_DUTY, 0.01f);
 
 hw::SteeringServo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringServo, cfg::FRONT_STEERING_SERVO_PWM0, cfg::FRONT_STEERING_SERVO_PWM180,
     cfg::SERVO_MAX_ANGULAR_VELO, frontWheelOffset, frontWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
@@ -46,43 +66,70 @@ hw::SteeringServo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringSer
 hw::SteeringServo rearSteeringServo(tim_SteeringServo, timChnl_RearSteeringServo, cfg::REAR_STEERING_SERVO_PWM0, cfg::REAR_STEERING_SERVO_PWM180,
     cfg::SERVO_MAX_ANGULAR_VELO, rearWheelOffset, rearWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
 
+template <typename T>
+bool hasControlTimedOut(const state_t<T>& control) {
+    return getTime() - control.timestamp() > millisecond_t(50);
+}
+
+bool isSafetySignalOk(const RemoteControllerData& rc) {
+    return rc.activeChannel == RemoteControllerData::channel_t::SafetyEnable && isBtw(rc.acceleration, 0.5f, 1.0f);
+}
+
+ControlData getControl(const ControlData& swControl, const state_t<RemoteControllerData>& remoteControl) {
+
+    ControlData control = { { { radian_t(0), radian_t(0), radian_t(0) } }, { { m_per_sec_t(0), cfg::EMERGENCY_BRAKE_DURATION } } }; // emergency brake by default
+
+    // remote control must be present, otherwise it means remote controller task or inter-task communication has died
+    if (!hasControlTimedOut(remoteControl)) {
+
+        const RemoteControllerData& rc = remoteControl.value();
+
+        if (rc.activeChannel == RemoteControllerData::channel_t::DirectControl) {
+            control.lat = {
+                map(rc.steering, -1.0f, 1.0f, -frontSteeringServo.wheelMaxDelta(), frontSteeringServo.wheelMaxDelta()),
+                map(rc.steering, -1.0f, 1.0f, rearSteeringServo.wheelMaxDelta(), -rearSteeringServo.wheelMaxDelta()),
+                radian_t(0)
+            };
+
+            control.lon = {
+                map(rc.acceleration, -1.0f, 1.0f, -cfg::DIRECT_CONTROL_MAX_SPEED, cfg::DIRECT_CONTROL_MAX_SPEED),
+                millisecond_t(0)
+            };
+        } else if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && (!useSafetyEnableSignal || isSafetySignalOk(rc))) {
+            control = swControl;
+        }
+    }
+
+    return control;
+}
+
 } // namespace
 
 extern "C" void runControlTask(void) {
 
-    RemoteControllerData remoteControllerData;
-
-    struct {
-        micro::radian_t frontWheelAngle;
-        micro::radian_t rearWheelAngle;
-        micro::radian_t extraServoAngle;
-    } lateralControl;
-
-    struct {
-        micro::m_per_sec_t speed;
-        micro::millisecond_t rampTime;
-    } longitudinalControl;
-
-    struct {
-        m_per_sec_t startSpeed, targetSpeed;
-        microsecond_t startTime, duration;
-    } speedRamp;
+    TaskMonitor::instance().registerTask();
 
     canFrame_t rxCanFrame;
     CanFrameHandler vehicleCanFrameHandler;
 
-    vehicleCanFrameHandler.registerHandler(can::LateralControl::id(), [&lateralControl] (const uint8_t * const data) {
-        reinterpret_cast<const can::LateralControl*>(data)->acquire(lateralControl.frontWheelAngle, lateralControl.rearWheelAngle, lateralControl.extraServoAngle);
+    state_t<RemoteControllerData> remoteControl;
+    ControlData swControl;
+
+    vehicleCanFrameHandler.registerHandler(can::LateralControl::id(), [&swControl] (const uint8_t * const data) {
+        LateralControl lateral;
+        reinterpret_cast<const can::LateralControl*>(data)->acquire(lateral.frontWheelAngle, lateral.rearWheelAngle, lateral.extraServoAngle);
+        swControl.lat = lateral;
     });
 
-    vehicleCanFrameHandler.registerHandler(can::LongitudinalControl::id(), [&longitudinalControl] (const uint8_t * const data) {
+    vehicleCanFrameHandler.registerHandler(can::LongitudinalControl::id(), [&swControl] (const uint8_t * const data) {
         LongitudinalControl longitudinal;
-        reinterpret_cast<const can::LongitudinalControl*>(data)->acquire(longitudinalControl.speed, useSafetyEnableSignal, longitudinalControl.rampTime);
+        reinterpret_cast<const can::LongitudinalControl*>(data)->acquire(longitudinal.speed, useSafetyEnableSignal, longitudinal.rampTime);
+        swControl.lon = longitudinal;
     });
 
     vehicleCanFrameHandler.registerHandler(can::SetMotorControlParams::id(), [] (const uint8_t * const data) {
-        reinterpret_cast<const can::SetMotorControlParams*>(data)->acquire(speedCtrlParams.P, speedCtrlParams.I);
-        speedCtrl.tune(speedCtrlParams);
+        reinterpret_cast<const can::SetMotorControlParams*>(data)->acquire(speedControllerParams.P, speedControllerParams.I);
+        speedController.tune(speedControllerParams);
     });
 
     vehicleCanFrameHandler.registerHandler(can::SetFrontWheelParams::id(), [] (const uint8_t * const data) {
@@ -97,17 +144,14 @@ extern "C" void runControlTask(void) {
 
     const CanManager::subscriberId_t vehicleCanSubsciberId = vehicleCanManager.registerSubscriber(vehicleCanFrameHandler.identifiers());
 
-    WatchdogTimer remoteControlWd(millisecond_t(50));
-
     while (true) {
-        bool isOk = !vehicleCanManager.hasRxTimedOut() && !remoteControlWd.hasTimedOut(); // TODO framework-wide solution for task isOk
-
         if (vehicleCanManager.read(vehicleCanSubsciberId, rxCanFrame)) {
             vehicleCanFrameHandler.handleFrame(rxCanFrame);
         }
 
-        if (remoteControllerQueue.receive(remoteControllerData, millisecond_t(0))) {
-            remoteControlWd.reset();
+        RemoteControllerData remoteControlData;
+        if (remoteControllerQueue.receive(remoteControlData, millisecond_t(0))) {
+            remoteControl = remoteControlData;
         }
 
         frontSteeringServo.setWheelOffset(frontWheelOffset);
@@ -115,50 +159,16 @@ extern "C" void runControlTask(void) {
         rearSteeringServo.setWheelOffset(rearWheelOffset);
         rearSteeringServo.setWheelMaxDelta(rearWheelMaxDelta);
 
-        switch (remoteControllerData.activeChannel) {
+        const ControlData validControl = getControl(swControl, remoteControl);
 
-        case RemoteControllerData::channel_t::DirectControl:
-            speedRamp.startSpeed = speedRamp.targetSpeed = map(remoteControllerData.acceleration, -1.0f, 1.0f, -cfg::DIRECT_CONTROL_MAX_SPEED, cfg::DIRECT_CONTROL_MAX_SPEED);
-            speedRamp.startTime  = getExactTime();
-            speedRamp.duration   = millisecond_t(0);
-
-            frontSteeringServo.writeWheelAngle(map(remoteControllerData.steering, -1.0f, 1.0f, -frontSteeringServo.wheelMaxDelta(), frontSteeringServo.wheelMaxDelta()));
-            rearSteeringServo.writeWheelAngle(map(remoteControllerData.steering, -1.0f, 1.0f, rearSteeringServo.wheelMaxDelta(), -rearSteeringServo.wheelMaxDelta()));
-            break;
-
-        case RemoteControllerData::channel_t::SafetyEnable:
-            if (isOk && isBtw(remoteControllerData.acceleration, 0.5f, 1.0f)) {
-                if (longitudinalControl.speed != speedRamp.targetSpeed || longitudinalControl.rampTime != speedRamp.duration) {
-                    speedRamp.startSpeed  = car.speed;
-                    speedRamp.targetSpeed = longitudinalControl.speed;
-                    speedRamp.startTime   = getExactTime();
-                    speedRamp.duration    = longitudinalControl.rampTime;
-                }
-
-                frontSteeringServo.writeWheelAngle(lateralControl.frontWheelAngle);
-                rearSteeringServo.writeWheelAngle(lateralControl.rearWheelAngle);
-            } else {
-                if (speedRamp.targetSpeed != m_per_sec_t(0) || speedRamp.duration != cfg::EMERGENCY_BRAKE_DURATION) {
-                    speedRamp.startSpeed  = car.speed;
-                    speedRamp.targetSpeed = m_per_sec_t(0);
-                    speedRamp.startTime   = getExactTime();
-                    speedRamp.duration    = cfg::EMERGENCY_BRAKE_DURATION;
-                }
-
-                frontSteeringServo.writeWheelAngle(radian_t(0));
-                rearSteeringServo.writeWheelAngle(radian_t(0));
-            }
-            break;
-
-        default:
-            break;
-        }
-
-        speedCtrl.desired = map(getExactTime(), speedRamp.startTime, speedRamp.startTime + speedRamp.duration, speedRamp.startSpeed, speedRamp.targetSpeed).get();
+        speedController.desired = speedRamp.update(car.speed, validControl.lon.value().speed, validControl.lon.value().rampTime).get();
+        frontSteeringServo.writeWheelAngle(validControl.lat.value().frontWheelAngle);
+        rearSteeringServo.writeWheelAngle(validControl.lat.value().rearWheelAngle);
 
         car.frontWheelAngle = frontSteeringServo.wheelAngle();
         car.rearWheelAngle  = rearSteeringServo.wheelAngle();
 
+        TaskMonitor::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
         os_delay(1);
     }
 }
@@ -173,8 +183,8 @@ void tim_ControlLoop_PeriodElapsedCallback() {
     car.speed = encoder.lastDiff() * cfg::ENCODER_INCR_DISTANCE / (now - lastUpdateTime);
     car.distance = encoder.numIncr() * cfg::ENCODER_INCR_DISTANCE;
 
-    speedCtrl.update(car.speed.get());
-    dcMotor.write(speedCtrl.output());
+    speedController.update(car.speed.get());
+    dcMotor.write(speedController.output());
 
     lastUpdateTime = now;
 }

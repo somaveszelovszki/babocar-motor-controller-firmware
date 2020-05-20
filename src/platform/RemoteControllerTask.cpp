@@ -1,6 +1,7 @@
 #include <micro/debug/DebugLed.hpp>
 #include <micro/debug/SystemManager.hpp>
 #include <micro/math/numeric.hpp>
+#include <micro/port/queue.hpp>
 #include <micro/port/task.hpp>
 #include <micro/sensor/Filter.hpp>
 

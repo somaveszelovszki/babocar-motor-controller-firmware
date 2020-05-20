@@ -6,6 +6,7 @@
 #include <micro/control/PID_Controller.hpp>
 #include <micro/control/ramp.hpp>
 #include <micro/panel/CanManager.hpp>
+#include <micro/port/queue.hpp>
 #include <micro/port/task.hpp>
 #include <micro/utils/CarProps.hpp>
 #include <micro/utils/state.hpp>

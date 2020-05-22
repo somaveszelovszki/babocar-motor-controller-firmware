@@ -1,3 +1,4 @@
+#include <cfg_board.hpp>
 #include <micro/debug/DebugLed.hpp>
 #include <micro/debug/SystemManager.hpp>
 #include <micro/math/numeric.hpp>
@@ -5,7 +6,6 @@
 #include <micro/port/task.hpp>
 #include <micro/sensor/Filter.hpp>
 
-#include <cfg_board.h>
 #include <RemoteControllerData.hpp>
 
 using namespace micro;
@@ -30,8 +30,10 @@ struct RemoteInput {
 RemoteInput directControl, safetyEnable;
 
 void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, RemoteInput::filter_t& inputFilter) {
-    const uint32_t cntr = __HAL_TIM_GET_COMPARE(tim_RcCtrl, chnl);
-    const uint32_t duty = cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl->Instance->ARR - prevCntr + cntr;
+    uint32_t cntr = 0;
+    timer_getCompare(tim_RcCtrl, chnl, cntr);
+
+    const uint32_t duty = cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr;
     if (duty > 850 && duty < 2150) {
         inputFilter.update(map<uint32_t, float>(duty, 1000, 2000, -1.0f, 1.0f));
     }
@@ -78,7 +80,7 @@ extern "C" void runRemoteControllerTask(void) {
         remoteControllerQueue.overwrite(remoteControllerData);
 
         SystemManager::instance().notify(activeChannel != RemoteControllerData::channel_t::INVALID);
-        os_delay(20);
+        os_sleep(millisecond_t(20));
     }
 }
 

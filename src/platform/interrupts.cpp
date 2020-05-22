@@ -1,4 +1,4 @@
-#include <cfg_board.h>
+#include <cfg_board.hpp>
 
 // INTERRUPT CALLBACKS - Must be defined in a task's source file!
 
@@ -26,7 +26,7 @@ uint32_t getChannel(const HAL_TIM_ActiveChannel chnl) {
 } // namespace
 
 extern "C" void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-    if (htim == tim_RcCtrl) {
+    if (htim == tim_RcCtrl.handle) {
         switch (getChannel(htim->Channel)) {
         case timChnl_RcCtrlDirectAccel: tim_RcCtrlDirectAccel_IC_CaptureCallback(); break;
         case timChnl_RcCtrlDirectSteer: tim_RcCtrlDirectSteer_IC_CaptureCallback(); break;
@@ -38,13 +38,13 @@ extern "C" void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 }
 
 extern "C" void micro_tim_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim == tim_ControlLoop) {
+    if (htim == tim_ControlLoop.handle) {
         tim_ControlLoop_PeriodElapsedCallback();
     }
 }
 
 extern "C" void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-    if (hcan == can_Vehicle) {
+    if (hcan == can_Vehicle.handle) {
         micro_Vehicle_Can_RxFifoMsgPendingCallback();
     }
 }

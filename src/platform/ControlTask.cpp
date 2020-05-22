@@ -1,3 +1,4 @@
+#include <cfg_board.hpp>
 #include <micro/debug/DebugLed.hpp>
 #include <micro/debug/SystemManager.hpp>
 #include <micro/hw/DC_Motor.hpp>
@@ -12,7 +13,6 @@
 #include <micro/utils/state.hpp>
 #include <micro/utils/timer.hpp>
 
-#include <cfg_board.h>
 #include <cfg_car.hpp>
 #include <RemoteControllerData.hpp>
 
@@ -24,7 +24,7 @@ using namespace micro;
 
 extern queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
-CanManager vehicleCanManager(can_Vehicle, canRxFifo_Vehicle, millisecond_t(50));
+CanManager vehicleCanManager(can_Vehicle, millisecond_t(50));
 
 namespace {
 
@@ -170,7 +170,7 @@ extern "C" void runControlTask(void) {
         car.rearWheelAngle  = rearSteeringServo.wheelAngle();
 
         SystemManager::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
-        os_delay(1);
+        os_sleep(millisecond_t(1));
     }
 }
 

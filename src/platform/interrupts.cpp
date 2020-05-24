@@ -2,10 +2,9 @@
 
 // INTERRUPT CALLBACKS - Must be defined in a task's source file!
 
-extern void tim_RcCtrlDirectAccel_IC_CaptureCallback();
-extern void tim_RcCtrlDirectSteer_IC_CaptureCallback();
-extern void tim_RcCtrlSafetyAccel_IC_CaptureCallback();
-extern void tim_RcCtrlSafetySteer_IC_CaptureCallback();
+extern void tim_RcCtrlAccel_IC_CaptureCallback();
+extern void tim_RcCtrlSteer_IC_CaptureCallback();
+extern void tim_RcCtrlModeSelect_IC_CaptureCallback();
 extern void tim_ControlLoop_PeriodElapsedCallback();
 extern void micro_Vehicle_Can_RxFifoMsgPendingCallback();
 
@@ -28,11 +27,10 @@ uint32_t getChannel(const HAL_TIM_ActiveChannel chnl) {
 extern "C" void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
     if (htim == tim_RcCtrl.handle) {
         switch (getChannel(htim->Channel)) {
-        case timChnl_RcCtrlDirectAccel: tim_RcCtrlDirectAccel_IC_CaptureCallback(); break;
-        case timChnl_RcCtrlDirectSteer: tim_RcCtrlDirectSteer_IC_CaptureCallback(); break;
-        case timChnl_RcCtrlSafetyAccel: tim_RcCtrlSafetyAccel_IC_CaptureCallback(); break;
-        case timChnl_RcCtrlSafetySteer: tim_RcCtrlSafetySteer_IC_CaptureCallback(); break;
-        default: /* should not get here */                                          break;
+        case timChnl_RcCtrlAccel: tim_RcCtrlAccel_IC_CaptureCallback();           break;
+        case timChnl_RcCtrlSteer: tim_RcCtrlSteer_IC_CaptureCallback();           break;
+        case timChnl_RcCtrlModeSelect: tim_RcCtrlModeSelect_IC_CaptureCallback(); break;
+        default: /* should not get here */                                        break;
         }
     }
 }

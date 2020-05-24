@@ -1,4 +1,3 @@
-#include <cfg_board.hpp>
 #include <micro/debug/DebugLed.hpp>
 #include <micro/debug/SystemManager.hpp>
 #include <micro/math/numeric.hpp>
@@ -6,6 +5,7 @@
 #include <micro/port/task.hpp>
 #include <micro/sensor/Filter.hpp>
 
+#include <cfg_board.hpp>
 #include <RemoteControllerData.hpp>
 
 using namespace micro;
@@ -21,13 +21,10 @@ struct RemoteInput {
 
     filter_t accelerationFilter = filter_t(0.0f, 0.0f, INPUT_FILTER_DEADBAND);
     filter_t steeringFilter     = filter_t(0.0f, 0.0f, INPUT_FILTER_DEADBAND);
-
-    millisecond_t timestamp() const {
-        return max(this->accelerationFilter.lastUpdateTimestamp(), this->steeringFilter.lastUpdateTimestamp());
-    }
+    filter_t modeSelectFilter   = filter_t(0.0f, 0.0f, INPUT_FILTER_DEADBAND);
 };
 
-RemoteInput directControl, safetyEnable;
+RemoteInput remoteInput;
 
 void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, RemoteInput::filter_t& inputFilter) {
     uint32_t cntr = 0;
@@ -41,28 +38,21 @@ void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, RemoteInput::
 }
 
 RemoteControllerData::channel_t getActiveChannel() {
-    return getTime() - max(directControl.timestamp(), safetyEnable.timestamp()) < millisecond_t(50) ?
-        directControl.timestamp() > safetyEnable.timestamp() ?
+    return getTime() - remoteInput.modeSelectFilter.lastUpdateTimestamp() < millisecond_t(50) ?
+        remoteInput.modeSelectFilter.value() < 1500 ?
             RemoteControllerData::channel_t::DirectControl :
-            RemoteControllerData::channel_t::SafetyEnable :
+            RemoteControllerData::channel_t::SafetyEnable  :
         RemoteControllerData::channel_t::INVALID;
 }
 
 void fillRemoteControllerData(RemoteControllerData& remoteControllerData, const RemoteControllerData::channel_t activeChannel) {
     remoteControllerData.activeChannel = activeChannel;
-    switch (activeChannel) {
-    case RemoteControllerData::channel_t::DirectControl:
-        remoteControllerData.acceleration = directControl.accelerationFilter.value();
-        remoteControllerData.steering     = directControl.steeringFilter.value();
-        break;
-    case RemoteControllerData::channel_t::SafetyEnable:
-        remoteControllerData.acceleration = safetyEnable.accelerationFilter.value();
-        remoteControllerData.steering     = safetyEnable.steeringFilter.value();
-        break;
-    default:
+    if (activeChannel == RemoteControllerData::channel_t::INVALID) {
         remoteControllerData.acceleration = 0.0f;
         remoteControllerData.steering     = 0.0f;
-        break;
+    } else {
+        remoteControllerData.acceleration = remoteInput.accelerationFilter.value();
+        remoteControllerData.steering     = remoteInput.steeringFilter.value();
     }
 }
 
@@ -84,23 +74,17 @@ extern "C" void runRemoteControllerTask(void) {
     }
 }
 
-void tim_RcCtrlDirectAccel_IC_CaptureCallback() {
+void tim_RcCtrlAccel_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlDirectAccel, cntr, directControl.accelerationFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlAccel, cntr, remoteInput.accelerationFilter);
 }
 
-void tim_RcCtrlDirectSteer_IC_CaptureCallback() {
+void tim_RcCtrlSteer_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlDirectSteer, cntr, directControl.steeringFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlSteer, cntr, remoteInput.steeringFilter);
 }
 
-void tim_RcCtrlSafetyAccel_IC_CaptureCallback() {
+void tim_RcCtrlModeSelect_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlSafetyAccel, cntr, safetyEnable.accelerationFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlModeSelect, cntr, remoteInput.modeSelectFilter);
 }
-
-void tim_RcCtrlSafetySteer_IC_CaptureCallback() {
-    static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlSafetySteer, cntr, safetyEnable.steeringFilter);
-}
-

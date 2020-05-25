@@ -9,16 +9,13 @@
 #include <micro/panel/CanManager.hpp>
 #include <micro/port/queue.hpp>
 #include <micro/port/task.hpp>
+#include <micro/port/task.hpp>
 #include <micro/utils/CarProps.hpp>
 #include <micro/utils/state.hpp>
 #include <micro/utils/timer.hpp>
 
 #include <cfg_car.hpp>
 #include <RemoteControllerData.hpp>
-
-#include <FreeRTOS.h>
-#include <queue.h>
-#include <task.h>
 
 using namespace micro;
 

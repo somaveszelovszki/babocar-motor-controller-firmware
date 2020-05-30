@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
 	<name>motor-controller</name>
-	<comment />
+	<comment></comment>
 	<projects>
 	</projects>
 	<buildSpec>
@@ -28,12 +28,12 @@
 		<link>
 			<name>micro-utils-src</name>
 			<type>2</type>
-			<location>/home/soma/work/catkin_ws/src/robonaut2020/micro-utils/src</location>
+			<location>/home/soma/work/catkin_ws/src/babocar/micro-utils/src</location>
 		</link>
 		<link>
 			<name>src</name>
 			<type>2</type>
-			<location>PARENT-1-ProjDirPath/micro-utils/src</location>
+			<locationURI>PARENT-2-ProjDirPath/micro-utils/src</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

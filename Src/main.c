@@ -58,7 +58,7 @@
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 
-#define MAX_SPEED_MPS 3.0f
+#define MAX_SPEED_MPS 2.0f
 
 static volatile encoder_t encoder;
 static volatile uint32_t rc_recv_in_speed = 1500;

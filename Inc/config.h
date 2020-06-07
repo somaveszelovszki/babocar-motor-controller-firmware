@@ -1,6 +1,8 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#define MAX_SPEED_MPS                 3.0f
+
 #define SPEED_CTRL_P                  0.14f
 #define SPEED_CTRL_I                  0.001f
 #define SPEED_CTRL_INTEGRAL_MAX       2.0f

@@ -58,8 +58,6 @@
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 
-#define MAX_SPEED_MPS 2.0f
-
 static volatile encoder_t encoder;
 static volatile uint32_t rc_recv_in_speed = 1500;
 static volatile uint32_t lastRcRecvTime = 0;
@@ -142,7 +140,11 @@ int main(void)
 
           const float recvPwm = (float)rc_recv_in_speed;
           if (HAL_GetTick() - lastRcRecvTime < 100) {
-              targetSpeed_mps = MAP(recvPwm, 1000, 2000, -MAX_SPEED_MPS, MAX_SPEED_MPS);
+              targetSpeed_mps = AVG(targetSpeed_mps, MAP(recvPwm, 1000, 2000, -MAX_SPEED_MPS, MAX_SPEED_MPS));
+
+              if (ABS(targetSpeed_mps) < 0.1f) {
+                  targetSpeed_mps = 0.0f;
+              }
           } else {
               targetSpeed_mps = 0.0f;
           }

@@ -29,12 +29,12 @@ void transmit(const char * const data) {
 bool monitorTasks() {
     static Timer failureLogTimer(millisecond_t(100));
 
-    const SystemManager::taskStates_t failingTasks = SystemManager::instance().failingTasks();
+    const SystemManager::TaskStates failingTasks = SystemManager::instance().failingTasks();
 
     if (failingTasks.size() && failureLogTimer.checkTimeout()) {
         char msg[LOG_MSG_MAX_SIZE];
         uint32_t idx = 0;
-        for (SystemManager::taskStates_t::const_iterator it = failingTasks.begin(); it != failingTasks.end(); ++it) {
+        for (SystemManager::TaskStates::const_iterator it = failingTasks.begin(); it != failingTasks.end(); ++it) {
             idx += strncpy_until(&msg[idx], it->details.pcTaskName, min(static_cast<uint32_t>(configMAX_TASK_NAME_LEN), LOG_MSG_MAX_SIZE - idx));
             if (it != failingTasks.back()) {
                 idx += strncpy_until(&msg[idx], ", ", sizeof(", "), LOG_MSG_MAX_SIZE - idx);
@@ -59,20 +59,20 @@ extern "C" void runDebugTask(void) {
     Timer debugParamsSendTimer(millisecond_t(500));
 
     while (true) {
-        if (rxBuffer.size() > 0) {
-            const char * const inCmd = reinterpret_cast<const char*>(*rxBuffer.getReadableBuffer());
-            rxBuffer.updateTail(1);
-            Params::instance().deserializeAll(inCmd, MAX_PARAMS_BUFFER_SIZE);
-        }
-
-        if (debugParamsSendTimer.checkTimeout()) {
-            Params::instance().serializeAll(paramsStr, MAX_PARAMS_BUFFER_SIZE);
-            transmit(paramsStr);
-        }
-
-        if (Log::instance().receive(txLog)) {
-            transmit(txLog);
-        }
+//        if (rxBuffer.size() > 0) {
+//            const char * const inCmd = reinterpret_cast<const char*>(*rxBuffer.getReadableBuffer());
+//            rxBuffer.updateTail(1);
+//            Params::instance().deserializeAll(inCmd, MAX_PARAMS_BUFFER_SIZE);
+//        }
+//
+//        if (debugParamsSendTimer.checkTimeout()) {
+//            Params::instance().serializeAll(paramsStr, MAX_PARAMS_BUFFER_SIZE);
+//            transmit(paramsStr);
+//        }
+//
+//        if (Log::instance().receive(txLog)) {
+//            transmit(txLog);
+//        }
 
         debugLed.update(monitorTasks());
         SystemManager::instance().notify(true);

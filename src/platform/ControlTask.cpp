@@ -107,66 +107,66 @@ extern "C" void runControlTask(void) {
 
     SystemManager::instance().registerTask();
 
-    canFrame_t rxCanFrame;
-    CanFrameHandler vehicleCanFrameHandler;
-
-    state_t<RemoteControllerData> remoteControl;
-    ControlData swControl;
-
-    vehicleCanFrameHandler.registerHandler(can::LateralControl::id(), [&swControl] (const uint8_t * const data) {
-        LateralControl lateral;
-        reinterpret_cast<const can::LateralControl*>(data)->acquire(lateral.frontWheelAngle, lateral.rearWheelAngle, lateral.extraServoAngle);
-        swControl.lat = lateral;
-    });
-
-    vehicleCanFrameHandler.registerHandler(can::LongitudinalControl::id(), [&swControl] (const uint8_t * const data) {
-        LongitudinalControl longitudinal;
-        reinterpret_cast<const can::LongitudinalControl*>(data)->acquire(longitudinal.speed, useSafetyEnableSignal, longitudinal.rampTime);
-        swControl.lon = longitudinal;
-    });
-
-    vehicleCanFrameHandler.registerHandler(can::SetMotorControlParams::id(), [] (const uint8_t * const data) {
-        reinterpret_cast<const can::SetMotorControlParams*>(data)->acquire(speedControllerParams.P, speedControllerParams.I);
-        speedController.tune(speedControllerParams);
-    });
-
-    vehicleCanFrameHandler.registerHandler(can::SetFrontWheelParams::id(), [] (const uint8_t * const data) {
-        reinterpret_cast<const can::SetFrontWheelParams*>(data)->acquire(frontWheelOffset, frontWheelMaxDelta);
-        vehicleCanManager.send(can::FrontWheelParams(frontWheelOffset, frontWheelMaxDelta));
-    });
-
-    vehicleCanFrameHandler.registerHandler(can::SetRearWheelParams::id(), [] (const uint8_t * const data) {
-        reinterpret_cast<const can::SetRearWheelParams*>(data)->acquire(rearWheelOffset, rearWheelMaxDelta);
-        vehicleCanManager.send(can::RearWheelParams(rearWheelOffset, rearWheelMaxDelta));
-    });
-
-    const CanManager::subscriberId_t vehicleCanSubsciberId = vehicleCanManager.registerSubscriber(vehicleCanFrameHandler.identifiers());
+//    canFrame_t rxCanFrame;
+//    CanFrameHandler vehicleCanFrameHandler;
+//
+//    state_t<RemoteControllerData> remoteControl;
+//    ControlData swControl;
+//
+//    vehicleCanFrameHandler.registerHandler(can::LateralControl::id(), [&swControl] (const uint8_t * const data) {
+//        LateralControl lateral;
+//        reinterpret_cast<const can::LateralControl*>(data)->acquire(lateral.frontWheelAngle, lateral.rearWheelAngle, lateral.extraServoAngle);
+//        swControl.lat = lateral;
+//    });
+//
+//    vehicleCanFrameHandler.registerHandler(can::LongitudinalControl::id(), [&swControl] (const uint8_t * const data) {
+//        LongitudinalControl longitudinal;
+//        reinterpret_cast<const can::LongitudinalControl*>(data)->acquire(longitudinal.speed, useSafetyEnableSignal, longitudinal.rampTime);
+//        swControl.lon = longitudinal;
+//    });
+//
+//    vehicleCanFrameHandler.registerHandler(can::SetMotorControlParams::id(), [] (const uint8_t * const data) {
+//        reinterpret_cast<const can::SetMotorControlParams*>(data)->acquire(speedControllerParams.P, speedControllerParams.I);
+//        speedController.tune(speedControllerParams);
+//    });
+//
+//    vehicleCanFrameHandler.registerHandler(can::SetFrontWheelParams::id(), [] (const uint8_t * const data) {
+//        reinterpret_cast<const can::SetFrontWheelParams*>(data)->acquire(frontWheelOffset, frontWheelMaxDelta);
+//        vehicleCanManager.send(can::FrontWheelParams(frontWheelOffset, frontWheelMaxDelta));
+//    });
+//
+//    vehicleCanFrameHandler.registerHandler(can::SetRearWheelParams::id(), [] (const uint8_t * const data) {
+//        reinterpret_cast<const can::SetRearWheelParams*>(data)->acquire(rearWheelOffset, rearWheelMaxDelta);
+//        vehicleCanManager.send(can::RearWheelParams(rearWheelOffset, rearWheelMaxDelta));
+//    });
+//
+//    const CanManager::subscriberId_t vehicleCanSubsciberId = vehicleCanManager.registerSubscriber(vehicleCanFrameHandler.identifiers());
 
     while (true) {
-        while (vehicleCanManager.read(vehicleCanSubsciberId, rxCanFrame)) {
-            vehicleCanFrameHandler.handleFrame(rxCanFrame);
-        }
-
-        RemoteControllerData remoteControlData;
-        if (remoteControllerQueue.receive(remoteControlData, millisecond_t(0))) {
-            remoteControl = remoteControlData;
-        }
-
-        frontSteeringServo.setWheelOffset(frontWheelOffset);
-        frontSteeringServo.setWheelMaxDelta(frontWheelMaxDelta);
-        rearSteeringServo.setWheelOffset(rearWheelOffset);
-        rearSteeringServo.setWheelMaxDelta(rearWheelMaxDelta);
-
-        const ControlData validControl = getControl(swControl, remoteControl);
-
-        speedController.desired = speedRamp.update(car.speed, validControl.lon.value().speed, validControl.lon.value().rampTime).get();
-        frontSteeringServo.writeWheelAngle(validControl.lat.value().frontWheelAngle);
-        rearSteeringServo.writeWheelAngle(validControl.lat.value().rearWheelAngle);
-
-        car.frontWheelAngle = frontSteeringServo.wheelAngle();
-        car.rearWheelAngle  = rearSteeringServo.wheelAngle();
-
-        SystemManager::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
+//        while (vehicleCanManager.read(vehicleCanSubsciberId, rxCanFrame)) {
+//            vehicleCanFrameHandler.handleFrame(rxCanFrame);
+//        }
+//
+//        RemoteControllerData remoteControlData;
+//        if (remoteControllerQueue.receive(remoteControlData, millisecond_t(0))) {
+//            remoteControl = remoteControlData;
+//        }
+//
+//        frontSteeringServo.setWheelOffset(frontWheelOffset);
+//        frontSteeringServo.setWheelMaxDelta(frontWheelMaxDelta);
+//        rearSteeringServo.setWheelOffset(rearWheelOffset);
+//        rearSteeringServo.setWheelMaxDelta(rearWheelMaxDelta);
+//
+//        const ControlData validControl = getControl(swControl, remoteControl);
+//
+//        speedController.desired = speedRamp.update(car.speed, validControl.lon.value().speed, validControl.lon.value().rampTime).get();
+//        frontSteeringServo.writeWheelAngle(validControl.lat.value().frontWheelAngle);
+//        rearSteeringServo.writeWheelAngle(validControl.lat.value().rearWheelAngle);
+//
+//        car.frontWheelAngle = frontSteeringServo.wheelAngle();
+//        car.rearWheelAngle  = rearSteeringServo.wheelAngle();
+//
+//        SystemManager::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
         os_sleep(millisecond_t(1));
     }
 }

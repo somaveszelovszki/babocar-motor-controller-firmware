@@ -64,6 +64,13 @@ hw::SteeringServo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringSer
 hw::SteeringServo rearSteeringServo(tim_SteeringServo, timChnl_RearSteeringServo, cfg::REAR_STEERING_SERVO_PWM0, cfg::REAR_STEERING_SERVO_PWM180,
     cfg::SERVO_MAX_ANGULAR_VELO, rearWheelOffset, rearWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
 
+canFrame_t rxCanFrame;
+CanFrameHandler vehicleCanFrameHandler;
+CanSubscriber::id_t vehicleCanSubscriberId = CanSubscriber::INVALID_ID;
+
+state_t<RemoteControllerData> remoteControl;
+ControlData swControl;
+
 template <typename T>
 bool hasControlTimedOut(const state_t<T>& control) {
     return getTime() - control.timestamp() > millisecond_t(50);
@@ -101,72 +108,84 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
     return control;
 }
 
+void initializeVehicleCan() {
+    vehicleCanFrameHandler.registerHandler(can::LateralControl::id(), [] (const uint8_t * const data) {
+        LateralControl lateral;
+        reinterpret_cast<const can::LateralControl*>(data)->acquire(lateral.frontWheelAngle, lateral.rearWheelAngle, lateral.extraServoAngle);
+        swControl.lat = lateral;
+    });
+
+    vehicleCanFrameHandler.registerHandler(can::LongitudinalControl::id(), [] (const uint8_t * const data) {
+        LongitudinalControl longitudinal;
+        reinterpret_cast<const can::LongitudinalControl*>(data)->acquire(longitudinal.speed, useSafetyEnableSignal, longitudinal.rampTime);
+        swControl.lon = longitudinal;
+    });
+
+    vehicleCanFrameHandler.registerHandler(can::SetMotorControlParams::id(), [] (const uint8_t * const data) {
+        reinterpret_cast<const can::SetMotorControlParams*>(data)->acquire(speedControllerParams.P, speedControllerParams.I);
+        speedController.tune(speedControllerParams);
+        vehicleCanManager.send<can::MotorControlParams>(vehicleCanSubscriberId, speedControllerParams.P, speedControllerParams.I);
+    });
+
+    vehicleCanFrameHandler.registerHandler(can::SetFrontWheelParams::id(), [] (const uint8_t * const data) {
+        reinterpret_cast<const can::SetFrontWheelParams*>(data)->acquire(frontWheelOffset, frontWheelMaxDelta);
+        vehicleCanManager.send<can::FrontWheelParams>(vehicleCanSubscriberId, frontWheelOffset, frontWheelMaxDelta);
+    });
+
+    vehicleCanFrameHandler.registerHandler(can::SetRearWheelParams::id(), [] (const uint8_t * const data) {
+        reinterpret_cast<const can::SetRearWheelParams*>(data)->acquire(rearWheelOffset, rearWheelMaxDelta);
+        vehicleCanManager.send<can::RearWheelParams>(vehicleCanSubscriberId, rearWheelOffset, rearWheelMaxDelta);
+    });
+
+    const CanFrameIds rxFilter = vehicleCanFrameHandler.identifiers();
+    const CanFrameIds txFilter = {
+        can::MotorControlParams::id(),
+        can::FrontWheelParams::id(),
+        can::RearWheelParams::id(),
+        can::LateralState::id(),
+        can::LongitudinalState::id()
+    };
+    vehicleCanSubscriberId = vehicleCanManager.registerSubscriber(rxFilter, txFilter);
+}
+
 } // namespace
 
 extern "C" void runControlTask(void) {
 
     SystemManager::instance().registerTask();
 
-//    canFrame_t rxCanFrame;
-//    CanFrameHandler vehicleCanFrameHandler;
-//
-//    state_t<RemoteControllerData> remoteControl;
-//    ControlData swControl;
-//
-//    vehicleCanFrameHandler.registerHandler(can::LateralControl::id(), [&swControl] (const uint8_t * const data) {
-//        LateralControl lateral;
-//        reinterpret_cast<const can::LateralControl*>(data)->acquire(lateral.frontWheelAngle, lateral.rearWheelAngle, lateral.extraServoAngle);
-//        swControl.lat = lateral;
-//    });
-//
-//    vehicleCanFrameHandler.registerHandler(can::LongitudinalControl::id(), [&swControl] (const uint8_t * const data) {
-//        LongitudinalControl longitudinal;
-//        reinterpret_cast<const can::LongitudinalControl*>(data)->acquire(longitudinal.speed, useSafetyEnableSignal, longitudinal.rampTime);
-//        swControl.lon = longitudinal;
-//    });
-//
-//    vehicleCanFrameHandler.registerHandler(can::SetMotorControlParams::id(), [] (const uint8_t * const data) {
-//        reinterpret_cast<const can::SetMotorControlParams*>(data)->acquire(speedControllerParams.P, speedControllerParams.I);
-//        speedController.tune(speedControllerParams);
-//    });
-//
-//    vehicleCanFrameHandler.registerHandler(can::SetFrontWheelParams::id(), [] (const uint8_t * const data) {
-//        reinterpret_cast<const can::SetFrontWheelParams*>(data)->acquire(frontWheelOffset, frontWheelMaxDelta);
-//        vehicleCanManager.send(can::FrontWheelParams(frontWheelOffset, frontWheelMaxDelta));
-//    });
-//
-//    vehicleCanFrameHandler.registerHandler(can::SetRearWheelParams::id(), [] (const uint8_t * const data) {
-//        reinterpret_cast<const can::SetRearWheelParams*>(data)->acquire(rearWheelOffset, rearWheelMaxDelta);
-//        vehicleCanManager.send(can::RearWheelParams(rearWheelOffset, rearWheelMaxDelta));
-//    });
-//
-//    const CanManager::subscriberId_t vehicleCanSubsciberId = vehicleCanManager.registerSubscriber(vehicleCanFrameHandler.identifiers());
+    initializeVehicleCan();
 
     while (true) {
-//        while (vehicleCanManager.read(vehicleCanSubsciberId, rxCanFrame)) {
-//            vehicleCanFrameHandler.handleFrame(rxCanFrame);
-//        }
-//
-//        RemoteControllerData remoteControlData;
-//        if (remoteControllerQueue.receive(remoteControlData, millisecond_t(0))) {
-//            remoteControl = remoteControlData;
-//        }
-//
-//        frontSteeringServo.setWheelOffset(frontWheelOffset);
-//        frontSteeringServo.setWheelMaxDelta(frontWheelMaxDelta);
-//        rearSteeringServo.setWheelOffset(rearWheelOffset);
-//        rearSteeringServo.setWheelMaxDelta(rearWheelMaxDelta);
-//
-//        const ControlData validControl = getControl(swControl, remoteControl);
-//
-//        speedController.desired = speedRamp.update(car.speed, validControl.lon.value().speed, validControl.lon.value().rampTime).get();
-//        frontSteeringServo.writeWheelAngle(validControl.lat.value().frontWheelAngle);
-//        rearSteeringServo.writeWheelAngle(validControl.lat.value().rearWheelAngle);
-//
-//        car.frontWheelAngle = frontSteeringServo.wheelAngle();
-//        car.rearWheelAngle  = rearSteeringServo.wheelAngle();
-//
-//        SystemManager::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
+        while (vehicleCanManager.read(vehicleCanSubscriberId, rxCanFrame)) {
+            vehicleCanFrameHandler.handleFrame(rxCanFrame);
+        }
+
+        RemoteControllerData remoteControlData;
+        if (remoteControllerQueue.receive(remoteControlData, millisecond_t(0))) {
+            remoteControl = remoteControlData;
+        }
+
+        frontSteeringServo.setWheelOffset(frontWheelOffset);
+        frontSteeringServo.setWheelMaxDelta(frontWheelMaxDelta);
+        rearSteeringServo.setWheelOffset(rearWheelOffset);
+        rearSteeringServo.setWheelMaxDelta(rearWheelMaxDelta);
+
+        const ControlData validControl = getControl(swControl, remoteControl);
+
+        speedController.desired = speedRamp.update(car.speed, validControl.lon.value().speed, validControl.lon.value().rampTime).get();
+        frontSteeringServo.writeWheelAngle(validControl.lat.value().frontWheelAngle);
+        rearSteeringServo.writeWheelAngle(validControl.lat.value().rearWheelAngle);
+
+        car.frontWheelAngle = frontSteeringServo.wheelAngle();
+        car.rearWheelAngle  = rearSteeringServo.wheelAngle();
+
+        car.speed = m_per_sec_t((static_cast<uint32_t>(getTime().get()) / 100) % 100);
+        car.distance += millimeter_t(1);
+
+        vehicleCanManager.periodicSend<can::LongitudinalState>(vehicleCanSubscriberId, car.speed, car.distance);
+
+        SystemManager::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
         os_sleep(millisecond_t(1));
     }
 }
@@ -178,8 +197,8 @@ void tim_ControlLoop_PeriodElapsedCallback() {
     const millisecond_t now = getExactTime();
     encoder.update();
 
-    car.speed = encoder.lastDiff() * cfg::ENCODER_INCR_DISTANCE / (now - lastUpdateTime);
-    car.distance = encoder.numIncr() * cfg::ENCODER_INCR_DISTANCE;
+    //car.speed = encoder.lastDiff() * cfg::ENCODER_INCR_DISTANCE / (now - lastUpdateTime);
+    //car.distance = encoder.numIncr() * cfg::ENCODER_INCR_DISTANCE;
 
     speedController.update(car.speed.get());
     dcMotor.write(speedController.output());

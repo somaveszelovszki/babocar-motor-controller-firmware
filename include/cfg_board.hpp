@@ -46,3 +46,5 @@ extern UART_HandleTypeDef huart2;
 #define uart_Debug                  micro::uart_t{ &huart2 }
 
 #define PANEL_VERSION               0x02
+
+#define QUARTZ_FREQ                 megahertz_t(20)

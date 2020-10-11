@@ -127,12 +127,12 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of RemoteControlle */
-  //osThreadStaticDef(RemoteControlle, StartRemoteControllerTask, osPriorityNormal, 0, 1024, RemoteControllerTaskBuffer, &RemoteControllerTaskControlBlock);
-  //RemoteControlleHandle = osThreadCreate(osThread(RemoteControlle), NULL);
+  osThreadStaticDef(RemoteControlle, StartRemoteControllerTask, osPriorityNormal, 0, 1024, RemoteControllerTaskBuffer, &RemoteControllerTaskControlBlock);
+  RemoteControlleHandle = osThreadCreate(osThread(RemoteControlle), NULL);
 
   /* definition and creation of ControlTask */
-  //osThreadStaticDef(ControlTask, StartControlTask, osPriorityHigh, 0, 1024, ControlTaskBuffer, &ControlTaskControlBlock);
-  //ControlTaskHandle = osThreadCreate(osThread(ControlTask), NULL);
+  osThreadStaticDef(ControlTask, StartControlTask, osPriorityHigh, 0, 1024, ControlTaskBuffer, &ControlTaskControlBlock);
+  ControlTaskHandle = osThreadCreate(osThread(ControlTask), NULL);
 
   /* definition and creation of DebugTask */
   osThreadStaticDef(DebugTask, StartDebugTask, osPriorityLow, 0, 1024, DebugTaskBuffer, &DebugTaskControlBlock);

@@ -180,9 +180,6 @@ extern "C" void runControlTask(void) {
         car.frontWheelAngle = frontSteeringServo.wheelAngle();
         car.rearWheelAngle  = rearSteeringServo.wheelAngle();
 
-        car.speed = m_per_sec_t((static_cast<uint32_t>(getTime().get()) / 100) % 100);
-        car.distance += millimeter_t(1);
-
         vehicleCanManager.periodicSend<can::LongitudinalState>(vehicleCanSubscriberId, car.speed, car.distance);
 
         SystemManager::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
@@ -197,8 +194,8 @@ void tim_ControlLoop_PeriodElapsedCallback() {
     const millisecond_t now = getExactTime();
     encoder.update();
 
-    //car.speed = encoder.lastDiff() * cfg::ENCODER_INCR_DISTANCE / (now - lastUpdateTime);
-    //car.distance = encoder.numIncr() * cfg::ENCODER_INCR_DISTANCE;
+    car.speed = encoder.lastDiff() * cfg::ENCODER_INCR_DISTANCE / (now - lastUpdateTime);
+    car.distance = encoder.numIncr() * cfg::ENCODER_INCR_DISTANCE;
 
     speedController.update(car.speed.get());
     dcMotor.write(speedController.output());

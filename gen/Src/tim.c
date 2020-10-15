@@ -73,7 +73,7 @@ void MX_TIM1_Init(void)
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-  sBreakDeadTimeConfig.DeadTime = 10;
+  sBreakDeadTimeConfig.DeadTime = 100;
   sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
   sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
   sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
@@ -336,7 +336,10 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef* tim_icHandle)
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* USER CODE BEGIN TIM3_MspInit 1 */
-
+    HAL_TIM_IC_Start(&htim3, TIM_CHANNEL_1);
+    HAL_TIM_IC_Start(&htim3, TIM_CHANNEL_2);
+    HAL_TIM_IC_Start(&htim3, TIM_CHANNEL_3);
+    HAL_TIM_IC_Start(&htim3, TIM_CHANNEL_4);
   /* USER CODE END TIM3_MspInit 1 */
   }
 }
@@ -356,7 +359,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
     HAL_NVIC_SetPriority(TIM7_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(TIM7_IRQn);
   /* USER CODE BEGIN TIM7_MspInit 1 */
-
+    HAL_TIM_Base_Start_IT(&htim7);
   /* USER CODE END TIM7_MspInit 1 */
   }
 }
@@ -386,7 +389,8 @@ void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef* tim_encoderHandle)
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* USER CODE BEGIN TIM8_MspInit 1 */
-
+    HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_1);
+    HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_2);
   /* USER CODE END TIM8_MspInit 1 */
   }
 }
@@ -422,7 +426,10 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN TIM1_MspPostInit 1 */
-
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
   /* USER CODE END TIM1_MspPostInit 1 */
   }
   else if(timHandle->Instance==TIM4)
@@ -465,7 +472,8 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE BEGIN TIM5_MspPostInit 1 */
-
+    HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);
   /* USER CODE END TIM5_MspPostInit 1 */
   }
 
@@ -575,7 +583,7 @@ void HAL_TIM_Encoder_MspDeInit(TIM_HandleTypeDef* tim_encoderHandle)
     HAL_GPIO_DeInit(GPIOC, GPIO_PIN_6|GPIO_PIN_7);
 
   /* USER CODE BEGIN TIM8_MspDeInit 1 */
-
+    HAL_TIM_Encoder_Stop(&htim8, TIM_CHANNEL_ALL);
   /* USER CODE END TIM8_MspDeInit 1 */
   }
 } 

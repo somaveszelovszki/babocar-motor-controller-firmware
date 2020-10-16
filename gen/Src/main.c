@@ -50,6 +50,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+extern TIM_HandleTypeDef htim3;
 
 /* USER CODE END PV */
 
@@ -64,35 +65,6 @@ extern void micro_tim_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-static void setupCan1(void) {
-    CAN_FilterTypeDef sFilterConfig;
-    sFilterConfig.FilterBank = 0;
-    sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-    sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-    sFilterConfig.FilterIdHigh = 0x0000;
-    sFilterConfig.FilterIdLow = 0x0000;
-    sFilterConfig.FilterMaskIdHigh = 0x0000;
-    sFilterConfig.FilterMaskIdLow = 0x0000;
-    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-    sFilterConfig.FilterActivation = ENABLE;
-    sFilterConfig.SlaveStartFilterBank = 14;
-
-    if (HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    if (HAL_CAN_Start(&hcan1) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
-    {
-      Error_Handler();
-    }
-}
 
 /* USER CODE END 0 */
 
@@ -135,7 +107,8 @@ int main(void)
   MX_CAN1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  setupCan1();
+  tim_start();
+  can_start();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

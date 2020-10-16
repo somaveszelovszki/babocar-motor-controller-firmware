@@ -100,6 +100,7 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
                 map(rc.acceleration, -1.0f, 1.0f, -cfg::DIRECT_CONTROL_MAX_SPEED, cfg::DIRECT_CONTROL_MAX_SPEED),
                 millisecond_t(0)
             };
+
         } else if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && (!useSafetyEnableSignal || isSafetySignalOk(rc))) {
             control = swControl;
         }

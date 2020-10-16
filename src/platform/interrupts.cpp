@@ -26,7 +26,8 @@ uint32_t getChannel(const HAL_TIM_ActiveChannel chnl) {
 
 extern "C" void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
     if (htim == tim_RcCtrl.handle) {
-        switch (getChannel(htim->Channel)) {
+        const uint32_t chnl = getChannel(htim->Channel);
+        switch (chnl) {
         case timChnl_RcCtrlAccel: tim_RcCtrlAccel_IC_CaptureCallback();           break;
         case timChnl_RcCtrlSteer: tim_RcCtrlSteer_IC_CaptureCallback();           break;
         case timChnl_RcCtrlModeSelect: tim_RcCtrlModeSelect_IC_CaptureCallback(); break;

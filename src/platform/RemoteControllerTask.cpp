@@ -14,7 +14,8 @@ queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
 namespace {
 
-constexpr float INPUT_FILTER_DEADBAND = 0.2f;
+constexpr float RECV_CHANNEL_ZERO_DEADBAND = 0.15f;
+constexpr float INPUT_FILTER_DEADBAND      = 0.2f;
 
 struct RemoteInput {
     typedef BounceFilter<float, 3> filter_t;
@@ -28,10 +29,13 @@ RemoteInput remoteInput;
 
 void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, RemoteInput::filter_t& inputFilter) {
     uint32_t cntr = 0;
-    timer_getCompare(tim_RcCtrl, chnl, cntr);
+    timer_getCaptured(tim_RcCtrl, chnl, cntr);
 
-    const uint32_t duty = cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr;
+    uint32_t duty = cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr;
     if (duty > 850 && duty < 2150) {
+        if (micro::isInRange(duty, 1500, RECV_CHANNEL_ZERO_DEADBAND)) {
+            duty = 1500;
+        }
         inputFilter.update(map<uint32_t, float>(duty, 1000, 2000, -1.0f, 1.0f));
     }
     prevCntr = cntr;
@@ -39,7 +43,7 @@ void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, RemoteInput::
 
 RemoteControllerData::channel_t getActiveChannel() {
     return getTime() - remoteInput.modeSelectFilter.lastUpdateTimestamp() < millisecond_t(50) ?
-        remoteInput.modeSelectFilter.value() < 1500 ?
+        remoteInput.modeSelectFilter.value() < 0.0f ?
             RemoteControllerData::channel_t::DirectControl :
             RemoteControllerData::channel_t::SafetyEnable  :
         RemoteControllerData::channel_t::INVALID;

@@ -56,7 +56,7 @@ ramp_t<m_per_sec_t> speedRamp;
 
 hw::DC_Motor dcMotor(tim_DC_Motor, timChnl_DC_Motor_Bridge1, timChnl_DC_Motor_Bridge2, cfg::MOTOR_MAX_DUTY);
 hw::Encoder encoder(tim_Encoder);
-PID_Controller speedController(speedControllerParams, cfg::MOTOR_MAX_DUTY, 0.01f);
+PID_Controller speedController(speedControllerParams, 1.0f, 0.01f);
 
 hw::SteeringServo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringServo, cfg::FRONT_STEERING_SERVO_PWM0, cfg::FRONT_STEERING_SERVO_PWM180,
     cfg::SERVO_MAX_ANGULAR_VELO, frontWheelOffset, frontWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);

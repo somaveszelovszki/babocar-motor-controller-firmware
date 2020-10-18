@@ -14,24 +14,30 @@ queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
 namespace {
 
-constexpr float RECV_CHANNEL_ZERO_DEADBAND = 0.15f;
-constexpr float INPUT_FILTER_DEADBAND      = 0.2f;
+
+constexpr uint32_t ACCELERATION_CHANNEL_OFFSET = 50;
+constexpr uint32_t STEERING_CHANNEL_OFFSET     = 0;
+constexpr uint32_t MODE_SELECT_CHANNEL_OFFSET  = 0;
+
+constexpr float RECV_CHANNEL_ZERO_DEADBAND   = 0.02f;
+constexpr float INPUT_FILTER_COMPLIANCE_RATE = 0.2f;
+constexpr float INPUT_FILTER_DEADBAND        = 0.5f;
 
 struct RemoteInput {
     typedef BounceFilter<float, 3> filter_t;
 
-    filter_t accelerationFilter = filter_t(0.0f, 0.0f, INPUT_FILTER_DEADBAND);
-    filter_t steeringFilter     = filter_t(0.0f, 0.0f, INPUT_FILTER_DEADBAND);
-    filter_t modeSelectFilter   = filter_t(0.0f, 0.0f, INPUT_FILTER_DEADBAND);
+    filter_t accelerationFilter = filter_t(0.0f, INPUT_FILTER_COMPLIANCE_RATE, INPUT_FILTER_DEADBAND);
+    filter_t steeringFilter     = filter_t(0.0f, INPUT_FILTER_COMPLIANCE_RATE, INPUT_FILTER_DEADBAND);
+    filter_t modeSelectFilter   = filter_t(0.0f, INPUT_FILTER_COMPLIANCE_RATE, INPUT_FILTER_DEADBAND);
 };
 
 RemoteInput remoteInput;
 
-void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, RemoteInput::filter_t& inputFilter) {
+void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, uint32_t offset, RemoteInput::filter_t& inputFilter) {
     uint32_t cntr = 0;
     timer_getCaptured(tim_RcCtrl, chnl, cntr);
 
-    uint32_t duty = cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr;
+    uint32_t duty = (cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr) - offset;
     if (duty > 850 && duty < 2150) {
         if (micro::isInRange(duty, 1500, RECV_CHANNEL_ZERO_DEADBAND)) {
             duty = 1500;
@@ -74,21 +80,21 @@ extern "C" void runRemoteControllerTask(void) {
         remoteControllerQueue.overwrite(remoteControllerData);
 
         SystemManager::instance().notify(activeChannel != RemoteControllerData::channel_t::INVALID);
-        os_sleep(millisecond_t(20));
+        os_sleep(millisecond_t(10));
     }
 }
 
 void tim_RcCtrlAccel_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlAccel, cntr, remoteInput.accelerationFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlAccel, cntr, ACCELERATION_CHANNEL_OFFSET, remoteInput.accelerationFilter);
 }
 
 void tim_RcCtrlSteer_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlSteer, cntr, remoteInput.steeringFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlSteer, cntr, STEERING_CHANNEL_OFFSET, remoteInput.steeringFilter);
 }
 
 void tim_RcCtrlModeSelect_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlModeSelect, cntr, remoteInput.modeSelectFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlModeSelect, cntr, MODE_SELECT_CHANNEL_OFFSET, remoteInput.modeSelectFilter);
 }

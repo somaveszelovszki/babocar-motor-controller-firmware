@@ -26,13 +26,13 @@ CanManager vehicleCanManager(can_Vehicle, millisecond_t(50));
 namespace {
 
 bool useSafetyEnableSignal         = true;
-micro::CarProps car                = micro::CarProps();
-micro::radian_t frontWheelOffset   = micro::radian_t(0);
-micro::radian_t frontWheelMaxDelta = micro::radian_t(0);
-micro::radian_t rearWheelOffset    = micro::radian_t(0);
-micro::radian_t rearWheelMaxDelta  = micro::radian_t(0);
-micro::radian_t extraServoOffset   = micro::radian_t(0);
-micro::radian_t extraServoMaxDelta = micro::radian_t(0);
+micro::CarProps car                = CarProps();
+micro::radian_t frontWheelOffset   = PI_2;
+micro::radian_t frontWheelMaxDelta = degree_t(25);
+micro::radian_t rearWheelOffset    = PI_2;
+micro::radian_t rearWheelMaxDelta  = degree_t(25);
+micro::radian_t extraServoOffset   = PI_2;
+micro::radian_t extraServoMaxDelta = radian_t(0);
 
 struct LateralControl {
     micro::radian_t frontWheelAngle;
@@ -100,6 +100,9 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
                 map(rc.acceleration, -1.0f, 1.0f, -cfg::DIRECT_CONTROL_MAX_SPEED, cfg::DIRECT_CONTROL_MAX_SPEED),
                 millisecond_t(0)
             };
+
+            // TODO
+            dcMotor.write(rc.acceleration);
 
         } else if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && (!useSafetyEnableSignal || isSafetySignalOk(rc))) {
             control = swControl;
@@ -174,7 +177,7 @@ extern "C" void runControlTask(void) {
 
         const ControlData validControl = getControl(swControl, remoteControl);
 
-        speedController.desired = speedRamp.update(car.speed, validControl.lon.value().speed, validControl.lon.value().rampTime).get();
+        speedController.target = speedRamp.update(car.speed, validControl.lon.value().speed, validControl.lon.value().rampTime).get();
         frontSteeringServo.writeWheelAngle(validControl.lat.value().frontWheelAngle);
         rearSteeringServo.writeWheelAngle(validControl.lat.value().rearWheelAngle);
 
@@ -199,7 +202,8 @@ void tim_ControlLoop_PeriodElapsedCallback() {
     car.distance = encoder.numIncr() * cfg::ENCODER_INCR_DISTANCE;
 
     speedController.update(car.speed.get());
-    dcMotor.write(speedController.output());
+    // TODO
+    //dcMotor.write(speedController.output());
 
     lastUpdateTime = now;
 }

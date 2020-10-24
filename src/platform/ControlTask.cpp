@@ -3,7 +3,7 @@
 #include <micro/debug/SystemManager.hpp>
 #include <micro/hw/DC_Motor.hpp>
 #include <micro/hw/Encoder.hpp>
-#include <micro/hw/SteeringServo.hpp>
+#include <micro/hw/Servo.hpp>
 #include <micro/control/PID_Controller.hpp>
 #include <micro/control/ramp.hpp>
 #include <micro/panel/CanManager.hpp>
@@ -25,14 +25,7 @@ CanManager vehicleCanManager(can_Vehicle, millisecond_t(50));
 
 namespace {
 
-bool useSafetyEnableSignal         = true;
-micro::CarProps car                = CarProps();
-micro::radian_t frontWheelOffset   = PI_2;
-micro::radian_t frontWheelMaxDelta = degree_t(25);
-micro::radian_t rearWheelOffset    = PI_2;
-micro::radian_t rearWheelMaxDelta  = degree_t(25);
-micro::radian_t extraServoOffset   = PI_2;
-micro::radian_t extraServoMaxDelta = radian_t(0);
+bool useSafetyEnableSignal = true;
 
 struct LateralControl {
     micro::radian_t frontWheelAngle;
@@ -51,18 +44,18 @@ struct ControlData {
 };
 
 PID_Params speedControllerParams;
-
+CarProps car;
 ramp_t<m_per_sec_t> speedRamp;
 
 hw::DC_Motor dcMotor(tim_DC_Motor, timChnl_DC_Motor_Bridge1, timChnl_DC_Motor_Bridge2, cfg::MOTOR_MAX_DUTY);
 hw::Encoder encoder(tim_Encoder);
 PID_Controller speedController(speedControllerParams, 1.0f, 0.01f);
 
-hw::SteeringServo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringServo, cfg::FRONT_STEERING_SERVO_PWM0, cfg::FRONT_STEERING_SERVO_PWM180,
-    cfg::SERVO_MAX_ANGULAR_VELO, frontWheelOffset, frontWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
+hw::Servo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringServo, cfg::FRONT_STEERING_SERVO_PWM_CENTER, cfg::FRONT_STEERING_SERVO_TRANSFER_RATE,
+    cfg::FRONT_WHEEL_MAX_DELTA_ANGLE, cfg::FRONT_SERVO_MAX_ANGULAR_VELO);
 
-hw::SteeringServo rearSteeringServo(tim_SteeringServo, timChnl_RearSteeringServo, cfg::REAR_STEERING_SERVO_PWM0, cfg::REAR_STEERING_SERVO_PWM180,
-    cfg::SERVO_MAX_ANGULAR_VELO, rearWheelOffset, rearWheelMaxDelta, cfg::SERVO_WHEEL_TRANSFER_RATE);
+hw::Servo rearSteeringServo(tim_SteeringServo, timChnl_RearSteeringServo, cfg::REAR_STEERING_SERVO_PWM_CENTER, cfg::REAR_STEERING_SERVO_TRANSFER_RATE,
+    cfg::REAR_WHEEL_MAX_DELTA_ANGLE, cfg::REAR_SERVO_MAX_ANGULAR_VELO);
 
 canFrame_t rxCanFrame;
 CanFrameHandler vehicleCanFrameHandler;
@@ -91,8 +84,8 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
 
         if (rc.activeChannel == RemoteControllerData::channel_t::DirectControl) {
             control.lat = {
-                map(rc.steering, -1.0f, 1.0f, -frontSteeringServo.wheelMaxDelta(), frontSteeringServo.wheelMaxDelta()),
-                map(rc.steering, -1.0f, 1.0f, rearSteeringServo.wheelMaxDelta(), -rearSteeringServo.wheelMaxDelta()),
+                map(rc.steering, -1.0f, 1.0f, -frontSteeringServo.maxAngle(), frontSteeringServo.maxAngle()),
+                map(rc.steering, -1.0f, 1.0f, rearSteeringServo.maxAngle(), -rearSteeringServo.maxAngle()),
                 radian_t(0)
             };
 
@@ -131,21 +124,9 @@ void initializeVehicleCan() {
         vehicleCanManager.send<can::MotorControlParams>(vehicleCanSubscriberId, speedControllerParams.P, speedControllerParams.I);
     });
 
-    vehicleCanFrameHandler.registerHandler(can::SetFrontWheelParams::id(), [] (const uint8_t * const data) {
-        reinterpret_cast<const can::SetFrontWheelParams*>(data)->acquire(frontWheelOffset, frontWheelMaxDelta);
-        vehicleCanManager.send<can::FrontWheelParams>(vehicleCanSubscriberId, frontWheelOffset, frontWheelMaxDelta);
-    });
-
-    vehicleCanFrameHandler.registerHandler(can::SetRearWheelParams::id(), [] (const uint8_t * const data) {
-        reinterpret_cast<const can::SetRearWheelParams*>(data)->acquire(rearWheelOffset, rearWheelMaxDelta);
-        vehicleCanManager.send<can::RearWheelParams>(vehicleCanSubscriberId, rearWheelOffset, rearWheelMaxDelta);
-    });
-
     const CanFrameIds rxFilter = vehicleCanFrameHandler.identifiers();
     const CanFrameIds txFilter = {
         can::MotorControlParams::id(),
-        can::FrontWheelParams::id(),
-        can::RearWheelParams::id(),
         can::LateralState::id(),
         can::LongitudinalState::id()
     };
@@ -170,19 +151,14 @@ extern "C" void runControlTask(void) {
             remoteControl = remoteControlData;
         }
 
-        frontSteeringServo.setWheelOffset(frontWheelOffset);
-        frontSteeringServo.setWheelMaxDelta(frontWheelMaxDelta);
-        rearSteeringServo.setWheelOffset(rearWheelOffset);
-        rearSteeringServo.setWheelMaxDelta(rearWheelMaxDelta);
-
         const ControlData validControl = getControl(swControl, remoteControl);
 
         speedController.target = speedRamp.update(car.speed, validControl.lon.value().speed, validControl.lon.value().rampTime).get();
-        frontSteeringServo.writeWheelAngle(validControl.lat.value().frontWheelAngle);
-        rearSteeringServo.writeWheelAngle(validControl.lat.value().rearWheelAngle);
+        frontSteeringServo.write(validControl.lat.value().frontWheelAngle);
+        rearSteeringServo.write(validControl.lat.value().rearWheelAngle);
 
-        car.frontWheelAngle = frontSteeringServo.wheelAngle();
-        car.rearWheelAngle  = rearSteeringServo.wheelAngle();
+        car.frontWheelAngle = frontSteeringServo.angle();
+        car.rearWheelAngle  = rearSteeringServo.angle();
 
         vehicleCanManager.periodicSend<can::LongitudinalState>(vehicleCanSubscriberId, car.speed, car.distance);
 

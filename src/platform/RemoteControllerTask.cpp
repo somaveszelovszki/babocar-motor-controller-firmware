@@ -14,14 +14,9 @@ queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
 namespace {
 
-
-constexpr uint32_t ACCELERATION_CHANNEL_OFFSET = 50;
-constexpr uint32_t STEERING_CHANNEL_OFFSET     = 0;
-constexpr uint32_t MODE_SELECT_CHANNEL_OFFSET  = 0;
-
-constexpr float RECV_CHANNEL_ZERO_DEADBAND   = 0.02f;
-constexpr float INPUT_FILTER_COMPLIANCE_RATE = 0.2f;
-constexpr float INPUT_FILTER_DEADBAND        = 0.5f;
+constexpr uint32_t RECV_CHANNEL_ZERO_DEADBAND = 75;
+constexpr float INPUT_FILTER_COMPLIANCE_RATE  = 0.2f;
+constexpr float INPUT_FILTER_DEADBAND         = 0.5f;
 
 struct RemoteInput {
     typedef BounceFilter<float, 3> filter_t;
@@ -33,13 +28,13 @@ struct RemoteInput {
 
 RemoteInput remoteInput;
 
-void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, uint32_t offset, RemoteInput::filter_t& inputFilter) {
+void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, RemoteInput::filter_t& inputFilter) {
     uint32_t cntr = 0;
     timer_getCaptured(tim_RcCtrl, chnl, cntr);
 
-    uint32_t duty = (cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr) - offset;
+    uint32_t duty = cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr;
     if (duty > 850 && duty < 2150) {
-        if (micro::isInRange(duty, 1500, RECV_CHANNEL_ZERO_DEADBAND)) {
+        if (micro::isBtw(duty, 1500 - RECV_CHANNEL_ZERO_DEADBAND, 1500 + RECV_CHANNEL_ZERO_DEADBAND)) {
             duty = 1500;
         }
         inputFilter.update(map<uint32_t, float>(duty, 1000, 2000, -1.0f, 1.0f));
@@ -86,15 +81,15 @@ extern "C" void runRemoteControllerTask(void) {
 
 void tim_RcCtrlAccel_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlAccel, cntr, ACCELERATION_CHANNEL_OFFSET, remoteInput.accelerationFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlAccel, cntr, remoteInput.accelerationFilter);
 }
 
 void tim_RcCtrlSteer_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlSteer, cntr, STEERING_CHANNEL_OFFSET, remoteInput.steeringFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlSteer, cntr, remoteInput.steeringFilter);
 }
 
 void tim_RcCtrlModeSelect_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlModeSelect, cntr, MODE_SELECT_CHANNEL_OFFSET, remoteInput.modeSelectFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlModeSelect, cntr, remoteInput.modeSelectFilter);
 }

@@ -43,7 +43,7 @@ struct ControlData {
     state_t<LongitudinalControl> lon;
 };
 
-PID_Params speedControllerParams;
+PID_Params speedControllerParams = { 0.4f, 0.0f };
 CarProps car;
 ramp_t<m_per_sec_t> speedRamp;
 
@@ -94,9 +94,6 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
                 millisecond_t(0)
             };
 
-            // TODO
-            dcMotor.write(rc.acceleration);
-
         } else if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && (!useSafetyEnableSignal || isSafetySignalOk(rc))) {
             control = swControl;
         }
@@ -139,6 +136,8 @@ extern "C" void runControlTask(void) {
 
     SystemManager::instance().registerTask();
 
+    encoder.initialize();
+
     initializeVehicleCan();
 
     while (true) {
@@ -174,12 +173,11 @@ void tim_ControlLoop_PeriodElapsedCallback() {
     const millisecond_t now = getExactTime();
     encoder.update();
 
-    car.speed = encoder.lastDiff() * cfg::ENCODER_INCR_DISTANCE / (now - lastUpdateTime);
+    car.speed    = encoder.lastDiff() * cfg::ENCODER_INCR_DISTANCE / (now - lastUpdateTime);
     car.distance = encoder.numIncr() * cfg::ENCODER_INCR_DISTANCE;
 
     speedController.update(car.speed.get());
-    // TODO
-    //dcMotor.write(speedController.output());
+    dcMotor.write(speedController.output());
 
     lastUpdateTime = now;
 }

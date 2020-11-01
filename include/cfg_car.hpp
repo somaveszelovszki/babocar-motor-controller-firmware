@@ -4,9 +4,9 @@
 
 namespace cfg {
 
-constexpr micro::micrometer_t ENCODER_INCR_DISTANCE     = micro::micrometer_t(10);
-constexpr float MOTOR_MAX_DUTY                          = 0.75f;
-constexpr micro::m_per_sec_t DIRECT_CONTROL_MAX_SPEED   = micro::m_per_sec_t(3);
+constexpr micro::micrometer_t ENCODER_INCR_DISTANCE          = micro::micrometer_t(8.16573169f); // 122463 ticks per 1 meter
+constexpr float MOTOR_MAX_DUTY                               = 0.92f;
+constexpr micro::m_per_sec_t DIRECT_CONTROL_MAX_SPEED        = micro::m_per_sec_t(3);
 
 constexpr uint32_t FRONT_STEERING_SERVO_PWM_CENTER           = 14300;
 constexpr micro::radian_t FRONT_STEERING_SERVO_TRANSFER_RATE = micro::milliradian_t(0.12f);
@@ -18,6 +18,6 @@ constexpr micro::radian_t REAR_STEERING_SERVO_TRANSFER_RATE  = micro::milliradia
 constexpr micro::radian_t REAR_WHEEL_MAX_DELTA_ANGLE         = micro::degree_t(24);
 constexpr micro::rad_per_sec_t REAR_SERVO_MAX_ANGULAR_VELO   = micro::deg_per_sec_t(500);
 
-constexpr micro::millisecond_t EMERGENCY_BRAKE_DURATION = micro::millisecond_t(700);
+constexpr micro::millisecond_t EMERGENCY_BRAKE_DURATION      = micro::millisecond_t(700);
 
 } // namespace cfg

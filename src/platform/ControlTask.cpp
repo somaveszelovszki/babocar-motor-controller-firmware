@@ -43,7 +43,7 @@ struct ControlData {
     state_t<LongitudinalControl> lon;
 };
 
-PID_Params speedControllerParams = { 0.4f, 0.0f };
+PID_Params speedControllerParams = { 0.0f, 0.0f, 0.0f };
 CarProps car;
 ramp_t<m_per_sec_t> speedRamp;
 

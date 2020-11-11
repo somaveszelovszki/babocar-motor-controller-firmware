@@ -75,7 +75,11 @@ bool isSafetySignalOk(const RemoteControllerData& rc) {
 
 ControlData getControl(const ControlData& swControl, const state_t<RemoteControllerData>& remoteControl) {
 
-    ControlData control = { { { radian_t(0), radian_t(0), radian_t(0) } }, { { m_per_sec_t(0), cfg::EMERGENCY_BRAKE_DURATION } } }; // emergency brake by default
+    // emergency brake by default
+    ControlData control = {
+        { { radian_t(0), radian_t(0), radian_t(0) } },
+        { { m_per_sec_t(0), abs(car.speed) <= m_per_sec_t(2) ? cfg::EMERGENCY_BRAKE_DURATION_HARD : cfg::EMERGENCY_BRAKE_DURATION_SMOOTH} }
+    };
 
     // remote control must be present, otherwise it means remote controller task or inter-task communication has died
     if (!hasControlTimedOut(remoteControl)) {
@@ -94,8 +98,17 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
                 millisecond_t(0)
             };
 
-        } else if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && (!useSafetyEnableSignal || isSafetySignalOk(rc))) {
-            control = swControl;
+        } else if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon)) {
+
+            // enables full control when safety signal is received
+            // enables lateral control only when safety signal is not received but car is moving
+            // (in order to keep car on the line after safety signal is lost)
+
+            if (!useSafetyEnableSignal || isSafetySignalOk(rc)) {
+                control = swControl;
+            } else if (!isZero(car.speed, mm_per_sec_t(5))) {
+                control.lat = swControl.lat;
+            }
         }
     }
 

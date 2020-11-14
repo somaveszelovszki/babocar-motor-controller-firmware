@@ -2,6 +2,6 @@
 
 using namespace micro;
 
-TEST(dummy, constructors) {
+TEST(dummy, dummy) {
 }
 

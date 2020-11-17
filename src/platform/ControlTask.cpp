@@ -173,6 +173,7 @@ extern "C" void runControlTask(void) {
         car.rearWheelAngle  = rearSteeringServo.angle();
 
         vehicleCanManager.periodicSend<can::LongitudinalState>(vehicleCanSubscriberId, car.speed, car.distance);
+        vehicleCanManager.periodicSend<can::LateralState>(vehicleCanSubscriberId, car.frontWheelAngle, car.rearWheelAngle, radian_t(0));
 
         SystemManager::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
         os_sleep(millisecond_t(1));

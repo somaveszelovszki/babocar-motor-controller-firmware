@@ -13,7 +13,7 @@ extern "C" void runDebugTask(void) {
     Timer debugParamsSendTimer(millisecond_t(500));
 
     while (true) {
-        debugLed.update(SystemManager::instance().failingTasks().size() > 0);
+        debugLed.update(SystemManager::instance().failingTasks().size() == 0);
         SystemManager::instance().notify(true);
         os_sleep(millisecond_t(1));
     }

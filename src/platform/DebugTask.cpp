@@ -10,7 +10,6 @@ extern "C" void runDebugTask(void) {
     SystemManager::instance().registerTask();
 
     DebugLed debugLed(gpio_Led);
-    Timer debugParamsSendTimer(millisecond_t(500));
 
     while (true) {
         debugLed.update(SystemManager::instance().failingTasks().size() == 0);

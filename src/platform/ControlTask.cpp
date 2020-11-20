@@ -21,7 +21,7 @@ using namespace micro;
 
 extern queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
-CanManager vehicleCanManager(can_Vehicle, millisecond_t(50));
+CanManager vehicleCanManager(can_Vehicle);
 
 namespace {
 
@@ -175,7 +175,12 @@ extern "C" void runControlTask(void) {
         vehicleCanManager.periodicSend<can::LongitudinalState>(vehicleCanSubscriberId, car.speed, car.distance);
         vehicleCanManager.periodicSend<can::LateralState>(vehicleCanSubscriberId, car.frontWheelAngle, car.rearWheelAngle, radian_t(0));
 
-        SystemManager::instance().notify(!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon) && !hasControlTimedOut(remoteControl));
+        SystemManager::instance().notify(
+            !vehicleCanManager.hasTimedOut(vehicleCanSubscriberId) &&
+            !hasControlTimedOut(swControl.lat)                     &&
+            !hasControlTimedOut(swControl.lon)                     &&
+            !hasControlTimedOut(remoteControl));
+
         os_sleep(millisecond_t(1));
     }
 }

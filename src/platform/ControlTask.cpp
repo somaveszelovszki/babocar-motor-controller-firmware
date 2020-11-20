@@ -78,7 +78,7 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
     // emergency brake by default
     ControlData control = {
         { { radian_t(0), radian_t(0), radian_t(0) } },
-        { { m_per_sec_t(0), abs(car.speed) <= m_per_sec_t(2) ? cfg::EMERGENCY_BRAKE_DURATION_HARD : cfg::EMERGENCY_BRAKE_DURATION_SMOOTH} }
+        { { m_per_sec_t(0), cfg::EMERGENCY_BRAKE_DURATION } }
     };
 
     // remote control must be present, otherwise it means remote controller task or inter-task communication has died

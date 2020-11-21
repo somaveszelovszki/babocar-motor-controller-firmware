@@ -26,6 +26,7 @@ CanManager vehicleCanManager(can_Vehicle);
 namespace {
 
 bool useSafetyEnableSignal = true;
+bool isRemoteControlled    = false;
 
 struct LateralControl {
     micro::radian_t frontWheelAngle;
@@ -86,7 +87,9 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
 
         const RemoteControllerData& rc = remoteControl.value();
 
-        if (rc.activeChannel == RemoteControllerData::channel_t::DirectControl) {
+        isRemoteControlled = RemoteControllerData::channel_t::DirectControl == rc.activeChannel;
+
+        if (isRemoteControlled) {
             control.lat = {
                 map(rc.steering, -1.0f, 1.0f, -frontSteeringServo.maxAngle(), frontSteeringServo.maxAngle()),
                 map(rc.steering, -1.0f, 1.0f, rearSteeringServo.maxAngle(), -rearSteeringServo.maxAngle()),
@@ -172,7 +175,7 @@ extern "C" void runControlTask(void) {
         car.frontWheelAngle = frontSteeringServo.angle();
         car.rearWheelAngle  = rearSteeringServo.angle();
 
-        vehicleCanManager.periodicSend<can::LongitudinalState>(vehicleCanSubscriberId, car.speed, car.distance);
+        vehicleCanManager.periodicSend<can::LongitudinalState>(vehicleCanSubscriberId, car.speed, isRemoteControlled, car.distance);
         vehicleCanManager.periodicSend<can::LateralState>(vehicleCanSubscriberId, car.frontWheelAngle, car.rearWheelAngle, radian_t(0));
 
         SystemManager::instance().notify(

@@ -50,7 +50,7 @@ ramp_t<m_per_sec_t> speedRamp;
 
 hw::DC_Motor dcMotor(tim_DC_Motor, timChnl_DC_Motor_Bridge1, timChnl_DC_Motor_Bridge2, cfg::MOTOR_MAX_DUTY);
 hw::Encoder encoder(tim_Encoder);
-PID_Controller speedController(speedControllerParams, 1.0f, 0.01f);
+PID_Controller speedController(speedControllerParams, 1.0f, 0.005f);
 
 hw::Servo frontSteeringServo(tim_SteeringServo, timChnl_FrontSteeringServo, cfg::FRONT_STEERING_SERVO_PWM_CENTER, cfg::FRONT_STEERING_SERVO_TRANSFER_RATE,
     cfg::FRONT_WHEEL_MAX_DELTA_ANGLE, cfg::FRONT_SERVO_MAX_ANGULAR_VELO);
@@ -89,7 +89,9 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
 
         isRemoteControlled = RemoteControllerData::channel_t::DirectControl == rc.activeChannel;
 
-        if (isRemoteControlled) {
+        switch (rc.activeChannel)
+        {
+        case RemoteControllerData::channel_t::DirectControl:
             control.lat = {
                 map(rc.steering, -1.0f, 1.0f, -frontSteeringServo.maxAngle(), frontSteeringServo.maxAngle()),
                 map(rc.steering, -1.0f, 1.0f, rearSteeringServo.maxAngle(), -rearSteeringServo.maxAngle()),
@@ -100,18 +102,26 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
                 map(rc.acceleration, -1.0f, 1.0f, -cfg::DIRECT_CONTROL_MAX_SPEED, cfg::DIRECT_CONTROL_MAX_SPEED),
                 millisecond_t(0)
             };
+            break;
 
-        } else if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon)) {
+        case RemoteControllerData::channel_t::SafetyEnable:
+            if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon)) {
 
-            // enables full control when safety signal is received
-            // enables lateral control only when safety signal is not received but car is moving
-            // (in order to keep car on the line after safety signal is lost)
+                // enables full control when safety signal is received
+                // enables lateral control only when safety signal is not received but car is moving
+                // (in order to keep car on the line after safety signal is lost)
 
-            if (!useSafetyEnableSignal || isSafetySignalOk(rc)) {
-                control = swControl;
-            } else if (!isZero(car.speed, mm_per_sec_t(5))) {
-                control.lat = swControl.lat;
+                if (!useSafetyEnableSignal || isSafetySignalOk(rc)) {
+                    control = swControl;
+                } else if (!isZero(car.speed, mm_per_sec_t(5))) {
+                    control.lat = swControl.lat;
+                }
             }
+            break;
+
+        default:
+            // does not change default behaviour, which is emergency brake
+            break;
         }
     }
 

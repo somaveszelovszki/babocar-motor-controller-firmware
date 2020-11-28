@@ -14,9 +14,10 @@ queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
 namespace {
 
-constexpr uint32_t RECV_CHANNEL_ZERO_DEADBAND = 75;
-constexpr float INPUT_FILTER_COMPLIANCE_RATE  = 0.2f;
-constexpr float INPUT_FILTER_DEADBAND         = 0.5f;
+constexpr uint32_t INPUT_CHANNEL_OFFSET      = 50;
+constexpr float INPUT_ZERO_DEADBAND          = 0.15f;
+constexpr float INPUT_FILTER_COMPLIANCE_RATE = 0.2f;
+constexpr float INPUT_FILTER_DEADBAND        = 0.5f;
 
 struct RemoteInput {
     typedef BounceFilter<float, 3> filter_t;
@@ -32,12 +33,15 @@ void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, RemoteInput::
     uint32_t cntr = 0;
     timer_getCaptured(tim_RcCtrl, chnl, cntr);
 
-    uint32_t duty = cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr;
+    uint32_t duty = (cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr) - INPUT_CHANNEL_OFFSET;
     if (duty > 850 && duty < 2150) {
-        if (micro::isBtw(duty, 1500 - RECV_CHANNEL_ZERO_DEADBAND, 1500 + RECV_CHANNEL_ZERO_DEADBAND)) {
-            duty = 1500;
+        float input = map<uint32_t, float>(duty, 1000, 2000, -1.0f, 1.0f);
+        if (abs(input) < INPUT_ZERO_DEADBAND) {
+            input = 0.0f;
         }
-        inputFilter.update(map<uint32_t, float>(duty, 1000, 2000, -1.0f, 1.0f));
+
+        inputFilter.update(input);
+
     }
     prevCntr = cntr;
 }

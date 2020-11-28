@@ -33,9 +33,9 @@ extern UART_HandleTypeDef huart2;
 #define timChnl_ServoX              TIM_CHANNEL_1
 
 #define tim_RcCtrl                  micro::timer_t{ &htim3 }
-#define timChnl_RcCtrlSteer         TIM_CHANNEL_1
+#define timChnl_RcCtrlSteer         TIM_CHANNEL_3
 #define timChnl_RcCtrlAccel         TIM_CHANNEL_2
-#define timChnl_RcCtrlModeSelect    TIM_CHANNEL_3
+#define timChnl_RcCtrlModeSelect    TIM_CHANNEL_1
 
 #define tim_ControlLoop             micro::timer_t{ &htim7 }
 

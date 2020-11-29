@@ -89,9 +89,7 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
 
         isRemoteControlled = RemoteControllerData::channel_t::DirectControl == rc.activeChannel;
 
-        switch (rc.activeChannel)
-        {
-        case RemoteControllerData::channel_t::DirectControl:
+        if (RemoteControllerData::channel_t::DirectControl == rc.activeChannel) {
             control.lat = {
                 map(rc.steering, -1.0f, 1.0f, -frontSteeringServo.maxValue(), frontSteeringServo.maxValue()),
                 map(rc.steering, -1.0f, 1.0f, rearSteeringServo.maxValue(), -rearSteeringServo.maxValue()),
@@ -102,27 +100,19 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
                 map(rc.acceleration, -1.0f, 1.0f, -cfg::DIRECT_CONTROL_MAX_SPEED, cfg::DIRECT_CONTROL_MAX_SPEED),
                 millisecond_t(0)
             };
-            break;
+        } else if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon)) {
 
-        case RemoteControllerData::channel_t::SafetyEnable:
-            if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon)) {
+            // enables full control when safety signal is received
+            // enables lateral control only when safety signal is not received but car is moving
+            // (in order to keep car on the line after safety signal is lost)
 
-                // enables full control when safety signal is received
-                // enables lateral control only when safety signal is not received but car is moving
-                // (in order to keep car on the line after safety signal is lost)
-
-                if (!useSafetyEnableSignal || isSafetySignalOk(rc)) {
-                    control = swControl;
-                } else if (!isZero(car.speed, mm_per_sec_t(5))) {
-                    control.lat = swControl.lat;
-                }
+            if (!useSafetyEnableSignal || isSafetySignalOk(rc)) {
+                control = swControl;
+            } else {
+                // enables lateral software control, but does not change default longitudinal behaviour, which is emergency brake
+                control.lat = swControl.lat;
             }
-            break;
-
-        default:
-            // does not change default behaviour, which is emergency brake
-            break;
-        }
+        } // else: does not change default behaviour, which is emergency brake
     }
 
     return control;

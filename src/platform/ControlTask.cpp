@@ -1,9 +1,9 @@
 #include <cfg_board.hpp>
 #include <micro/debug/DebugLed.hpp>
 #include <micro/debug/SystemManager.hpp>
-#include <micro/hw/DC_Motor.hpp>
+#include <micro/hw/DcMotor.hpp>
 #include <micro/hw/Encoder.hpp>
-#include <micro/hw/Servo.hpp>
+#include <micro/hw/ServoMotor.hpp>
 #include <micro/control/PID_Controller.hpp>
 #include <micro/control/ramp.hpp>
 #include <micro/panel/CanManager.hpp>
@@ -48,7 +48,7 @@ PID_Params speedControllerParams = { 0.0f, 0.0f, 0.0f };
 CarProps car;
 ramp_t<m_per_sec_t> speedRamp;
 
-hw::DC_Motor dcMotor(tim_DC_Motor, timChnl_DC_Motor_Bridge1, timChnl_DC_Motor_Bridge2, cfg::MOTOR_MAX_DUTY);
+hw::BridgeDcMotor dcMotor(tim_DC_Motor, timChnl_DC_Motor_Bridge1, timChnl_DC_Motor_Bridge2, cfg::MOTOR_MAX_DUTY);
 hw::Encoder encoder(tim_Encoder);
 PID_Controller speedController(speedControllerParams, 1.0f, 0.2f, 0.005f);
 
@@ -93,8 +93,8 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
         {
         case RemoteControllerData::channel_t::DirectControl:
             control.lat = {
-                map(rc.steering, -1.0f, 1.0f, -frontSteeringServo.maxAngle(), frontSteeringServo.maxAngle()),
-                map(rc.steering, -1.0f, 1.0f, rearSteeringServo.maxAngle(), -rearSteeringServo.maxAngle()),
+                map(rc.steering, -1.0f, 1.0f, -frontSteeringServo.maxValue(), frontSteeringServo.maxValue()),
+                map(rc.steering, -1.0f, 1.0f, rearSteeringServo.maxValue(), -rearSteeringServo.maxValue()),
                 radian_t(0)
             };
 

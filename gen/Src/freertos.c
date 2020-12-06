@@ -159,7 +159,9 @@ void StartRemoteControllerTask(void const * argument)
     
 
   /* USER CODE BEGIN StartRemoteControllerTask */
+  UNUSED(argument);
   runRemoteControllerTask();
+  vTaskDelete(NULL);
   /* USER CODE END StartRemoteControllerTask */
 }
 
@@ -173,7 +175,9 @@ void StartRemoteControllerTask(void const * argument)
 void StartControlTask(void const * argument)
 {
   /* USER CODE BEGIN StartControlTask */
+  UNUSED(argument);
   runControlTask();
+  vTaskDelete(NULL);
   /* USER CODE END StartControlTask */
 }
 
@@ -187,7 +191,9 @@ void StartControlTask(void const * argument)
 void StartDebugTask(void const * argument)
 {
   /* USER CODE BEGIN StartDebugTask */
+  UNUSED(argument);
   runDebugTask();
+  vTaskDelete(NULL);
   /* USER CODE END StartDebugTask */
 }
 

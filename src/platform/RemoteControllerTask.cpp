@@ -14,8 +14,11 @@ queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
 namespace {
 
-constexpr uint32_t INPUT_CHANNEL_OFFSET      = 50;
-constexpr float INPUT_ZERO_DEADBAND          = 0.15f;
+constexpr uint32_t INPUT_CHANNEL_ACCEL_OFFSET = 80;
+constexpr uint32_t INPUT_CHANNEL_STEER_OFFSET = 35;
+constexpr uint32_t INPUT_CHANNEL_MODE_OFFSET  = 0;
+
+constexpr float INPUT_ZERO_DEADBAND          = 0.1f;
 constexpr float INPUT_FILTER_COMPLIANCE_RATE = 0.2f;
 constexpr float INPUT_FILTER_DEADBAND        = 0.5f;
 
@@ -29,11 +32,11 @@ struct RemoteInput {
 
 RemoteInput remoteInput;
 
-void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, RemoteInput::filter_t& inputFilter) {
+void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, const uint32_t offset, RemoteInput::filter_t& inputFilter) {
     uint32_t cntr = 0;
     timer_getCaptured(tim_RcCtrl, chnl, cntr);
 
-    uint32_t duty = (cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr) - INPUT_CHANNEL_OFFSET;
+    uint32_t duty = (cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr) - offset;
     if (duty > 850 && duty < 2150) {
         float input = map<uint32_t, float>(duty, 1000, 2000, -1.0f, 1.0f);
         if (abs(input) < INPUT_ZERO_DEADBAND) {
@@ -85,15 +88,15 @@ extern "C" void runRemoteControllerTask(void) {
 
 void tim_RcCtrlAccel_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlAccel, cntr, remoteInput.accelerationFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlAccel, cntr, INPUT_CHANNEL_ACCEL_OFFSET, remoteInput.accelerationFilter);
 }
 
 void tim_RcCtrlSteer_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlSteer, cntr, remoteInput.steeringFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlSteer, cntr, INPUT_CHANNEL_STEER_OFFSET, remoteInput.steeringFilter);
 }
 
 void tim_RcCtrlModeSelect_IC_CaptureCallback() {
     static uint32_t cntr = 0;
-    onRcCtrlInputCapture(timChnl_RcCtrlModeSelect, cntr, remoteInput.modeSelectFilter);
+    onRcCtrlInputCapture(timChnl_RcCtrlModeSelect, cntr, INPUT_CHANNEL_MODE_OFFSET, remoteInput.modeSelectFilter);
 }

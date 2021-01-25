@@ -76,6 +76,10 @@ bool isSafetySignalOk(const RemoteControllerData& rc) {
     return rc.activeChannel == RemoteControllerData::channel_t::SafetyEnable && isBtw(rc.acceleration, 0.5f, 1.0f);
 }
 
+bool isSafetySignalSmoothBrake(const RemoteControllerData& rc) {
+    return rc.activeChannel == RemoteControllerData::channel_t::SafetyEnable && isBtw(rc.acceleration, -0.25f, 0.5f);
+}
+
 ControlData getControl(const ControlData& swControl, const state_t<RemoteControllerData>& remoteControl) {
 
     // emergency brake by default
@@ -113,6 +117,7 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
             } else {
                 // enables lateral software control, but does not change default longitudinal behaviour, which is emergency brake
                 control.lat = swControl.lat;
+                control.lon = { { m_per_sec_t(0), isSafetySignalSmoothBrake(rc) ? cfg::SMOOTH_BRAKE_DURATION : cfg::EMERGENCY_BRAKE_DURATION } };
             }
         } // else: does not change default behaviour, which is emergency brake
     }

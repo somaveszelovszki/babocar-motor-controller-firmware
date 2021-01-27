@@ -18,16 +18,14 @@ constexpr uint32_t INPUT_CHANNEL_ACCEL_OFFSET = 80;
 constexpr uint32_t INPUT_CHANNEL_STEER_OFFSET = 35;
 constexpr uint32_t INPUT_CHANNEL_MODE_OFFSET  = 0;
 
-constexpr float INPUT_ZERO_DEADBAND          = 0.1f;
-constexpr float INPUT_FILTER_COMPLIANCE_RATE = 0.2f;
-constexpr float INPUT_FILTER_DEADBAND        = 0.5f;
+constexpr float INPUT_ZERO_DEADBAND = 0.1f;
 
 struct RemoteInput {
-    typedef BounceFilter<float, 3> filter_t;
+    typedef LowPassFilter<float, 3> filter_t;
 
-    filter_t accelerationFilter = filter_t(0.0f, INPUT_FILTER_COMPLIANCE_RATE, INPUT_FILTER_DEADBAND);
-    filter_t steeringFilter     = filter_t(0.0f, INPUT_FILTER_COMPLIANCE_RATE, INPUT_FILTER_DEADBAND);
-    filter_t modeSelectFilter   = filter_t(0.0f, INPUT_FILTER_COMPLIANCE_RATE, INPUT_FILTER_DEADBAND);
+    filter_t accelerationFilter = filter_t(0.0f);
+    filter_t steeringFilter     = filter_t(0.0f);
+    filter_t modeSelectFilter   = filter_t(0.0f);
 };
 
 RemoteInput remoteInput;

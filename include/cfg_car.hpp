@@ -4,7 +4,7 @@
 
 namespace cfg {
 
-constexpr micro::micrometer_t ENCODER_INCR_DISTANCE                    = micro::micrometer_t(8.222834709f);
+constexpr micro::micrometer_t ENCODER_INCR_DISTANCE                    = micro::micrometer_t(8.061602656f);
 constexpr float MOTOR_MAX_DUTY                                         = 0.96f;
 constexpr micro::m_per_sec_t DIRECT_CONTROL_MAX_SPEED                  = micro::m_per_sec_t(1.7f);
 

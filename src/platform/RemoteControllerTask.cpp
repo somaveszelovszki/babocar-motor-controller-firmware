@@ -10,6 +10,8 @@
 
 using namespace micro;
 
+extern bool useSafetyEnableSignal;
+
 queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
 namespace {
@@ -79,7 +81,7 @@ extern "C" void runRemoteControllerTask(void) {
         fillRemoteControllerData(remoteControllerData, activeChannel);
         remoteControllerQueue.overwrite(remoteControllerData);
 
-        SystemManager::instance().notify(activeChannel != RemoteControllerData::channel_t::INVALID);
+        SystemManager::instance().notify(!useSafetyEnableSignal || activeChannel != RemoteControllerData::channel_t::INVALID);
         os_sleep(millisecond_t(10));
     }
 }

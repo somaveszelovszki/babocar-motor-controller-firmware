@@ -21,12 +21,13 @@ using namespace micro;
 
 extern queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
-CanManager vehicleCanManager(can_Vehicle);
+bool useSafetyEnableSignal = true;
 
 namespace {
 
-bool useSafetyEnableSignal = true;
-bool isRemoteControlled    = false;
+CanManager vehicleCanManager(can_Vehicle);
+
+bool isRemoteControlled = false;
 
 struct LateralControl {
     micro::radian_t frontWheelAngle;

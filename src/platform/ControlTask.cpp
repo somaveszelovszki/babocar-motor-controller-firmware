@@ -61,7 +61,6 @@ hw::ServoMotor rearSteeringServo(tim_SteeringServo, timChnl_RearSteeringServo, c
     cfg::REAR_STEERING_SERVO_POSITIVE_TRANSFER_RATE, cfg::REAR_STEERING_SERVO_NEGATIVE_TRANSFER_RATE,
     cfg::REAR_WHEEL_MAX_DELTA_ANGLE, cfg::REAR_SERVO_MAX_ANGULAR_VELOCITY);
 
-canFrame_t rxCanFrame;
 CanFrameHandler vehicleCanFrameHandler;
 CanSubscriber::id_t vehicleCanSubscriberId = CanSubscriber::INVALID_ID;
 
@@ -165,8 +164,8 @@ extern "C" void runControlTask(void) {
     initializeVehicleCan();
 
     while (true) {
-        while (vehicleCanManager.read(vehicleCanSubscriberId, rxCanFrame)) {
-            vehicleCanFrameHandler.handleFrame(rxCanFrame);
+        while (const auto frame = vehicleCanManager.read(vehicleCanSubscriberId)) {
+            vehicleCanFrameHandler.handleFrame(*frame);
         }
 
         RemoteControllerData remoteControlData;

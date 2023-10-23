@@ -1,4 +1,5 @@
-#include <micro/math/numeric.hpp>
+#include <cmath>
+
 #include <micro/panel/panelVersion.hpp>
 #include <micro/port/timer.hpp>
 
@@ -17,7 +18,7 @@ extern "C" void system_init(void) {
         Error_Handler();
     }
 
-    if (micro::round(static_cast<hertz_t>(QUARTZ_FREQ).get()) != HSE_VALUE) {
+    if (std::lround(static_cast<hertz_t>(QUARTZ_FREQ).get()) != HSE_VALUE) {
         Error_Handler();
     }
 

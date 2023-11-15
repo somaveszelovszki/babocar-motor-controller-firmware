@@ -12,7 +12,7 @@ extern "C" void runDebugTask(void) {
     DebugLed debugLed(gpio_Led);
 
     while (true) {
-        debugLed.update(SystemManager::instance().failingTasks().size() == 0);
+        debugLed.update(SystemManager::instance().ok());
         SystemManager::instance().notify(true);
         os_sleep(millisecond_t(1));
     }

@@ -38,7 +38,7 @@ void onRcCtrlInputCapture(const uint32_t chnl, uint32_t& prevCntr, const uint32_
 
     uint32_t duty = (cntr >= prevCntr ? cntr - prevCntr : tim_RcCtrl.handle->Instance->ARR - prevCntr + cntr) - offset;
     if (duty > 850 && duty < 2150) {
-        float input = map<uint32_t, float>(duty, 1000, 2000, -1.0f, 1.0f);
+        float input = micro::lerp<uint32_t, float>(duty, 1000, 2000, -1.0f, 1.0f);
         if (abs(input) < INPUT_ZERO_DEADBAND) {
             input = 0.0f;
         }

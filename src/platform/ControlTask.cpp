@@ -62,7 +62,7 @@ hw::ServoMotor rearSteeringServo(tim_SteeringServo, timChnl_RearSteeringServo, c
     cfg::REAR_WHEEL_MAX_DELTA_ANGLE, cfg::REAR_SERVO_MAX_ANGULAR_VELOCITY);
 
 CanFrameHandler vehicleCanFrameHandler;
-CanSubscriber::id_t vehicleCanSubscriberId = CanSubscriber::INVALID_ID;
+CanSubscriber::Id vehicleCanSubscriberId = CanSubscriber::INVALID_ID;
 
 state_t<RemoteControllerData> remoteControl;
 ControlData swControl;
@@ -97,13 +97,13 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
 
         if (RemoteControllerData::channel_t::DirectControl == rc.activeChannel) {
             control.lat = {
-                map(rc.steering, -1.0f, 1.0f, -frontSteeringServo.maxValue(), frontSteeringServo.maxValue()),
-                map(rc.steering, -1.0f, 1.0f, rearSteeringServo.maxValue(), -rearSteeringServo.maxValue()),
+                micro::lerp(rc.steering, -1.0f, 1.0f, -frontSteeringServo.maxValue(), frontSteeringServo.maxValue()),
+                micro::lerp(rc.steering, -1.0f, 1.0f, rearSteeringServo.maxValue(), -rearSteeringServo.maxValue()),
                 radian_t(0)
             };
 
             control.lon = {
-                map(rc.acceleration, -1.0f, 1.0f, -cfg::DIRECT_CONTROL_MAX_SPEED, cfg::DIRECT_CONTROL_MAX_SPEED),
+                micro::lerp(rc.acceleration, -1.0f, 1.0f, -cfg::DIRECT_CONTROL_MAX_SPEED, cfg::DIRECT_CONTROL_MAX_SPEED),
                 millisecond_t(0)
             };
         } else if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon)) {

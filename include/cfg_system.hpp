@@ -4,6 +4,6 @@
 
 namespace cfg {
 
-constexpr uint8_t NUM_MONITORED_TASKS = 8;
+constexpr uint8_t NUM_MONITORED_TASKS = 3;
 
 } // namespace cfg

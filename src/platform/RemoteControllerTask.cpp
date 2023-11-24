@@ -1,18 +1,17 @@
 #include <micro/debug/DebugLed.hpp>
-#include <micro/debug/SystemManager.hpp>
+#include <micro/debug/TaskMonitor.hpp>
 #include <micro/math/numeric.hpp>
 #include <micro/port/queue.hpp>
 #include <micro/port/task.hpp>
 #include <micro/sensor/Filter.hpp>
 
 #include <cfg_board.hpp>
+#include <globals.hpp>
 #include <RemoteControllerData.hpp>
 
 using namespace micro;
 
 extern bool useSafetyEnableSignal;
-
-queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
 namespace {
 
@@ -71,8 +70,7 @@ void fillRemoteControllerData(RemoteControllerData& remoteControllerData, const 
 } // namespace
 
 extern "C" void runRemoteControllerTask(void) {
-
-    SystemManager::instance().registerTask();
+    taskMonitor.registerInitializedTask();
 
     RemoteControllerData remoteControllerData;
 
@@ -81,7 +79,7 @@ extern "C" void runRemoteControllerTask(void) {
         fillRemoteControllerData(remoteControllerData, activeChannel);
         remoteControllerQueue.overwrite(remoteControllerData);
 
-        SystemManager::instance().notify(!useSafetyEnableSignal || activeChannel != RemoteControllerData::channel_t::INVALID);
+        taskMonitor.notify(!useSafetyEnableSignal || activeChannel != RemoteControllerData::channel_t::INVALID);
         os_sleep(millisecond_t(10));
     }
 }

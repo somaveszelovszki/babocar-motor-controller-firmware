@@ -1,6 +1,5 @@
-#include <cfg_board.hpp>
 #include <micro/debug/DebugLed.hpp>
-#include <micro/debug/SystemManager.hpp>
+#include <micro/debug/TaskMonitor.hpp>
 #include <micro/hw/DcMotor.hpp>
 #include <micro/hw/Encoder.hpp>
 #include <micro/hw/ServoMotor.hpp>
@@ -14,18 +13,16 @@
 #include <micro/utils/state.hpp>
 #include <micro/utils/timer.hpp>
 
+#include <cfg_board.hpp>
 #include <cfg_car.hpp>
+#include <globals.hpp>
 #include <RemoteControllerData.hpp>
 
 using namespace micro;
 
-extern queue_t<RemoteControllerData, 1> remoteControllerQueue;
-
 bool useSafetyEnableSignal = true;
 
 namespace {
-
-CanManager vehicleCanManager(can_Vehicle);
 
 bool isRemoteControlled = false;
 
@@ -90,7 +87,6 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
 
     // remote control must be present, otherwise it means remote controller task or inter-task communication has died
     if (!hasControlTimedOut(remoteControl)) {
-
         const RemoteControllerData& rc = remoteControl.value();
 
         isRemoteControlled = RemoteControllerData::channel_t::DirectControl == rc.activeChannel;
@@ -107,7 +103,6 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
                 millisecond_t(0)
             };
         } else if (!hasControlTimedOut(swControl.lat) && !hasControlTimedOut(swControl.lon)) {
-
             // enables full control when safety signal is received
             // enables lateral control only when safety signal is not received but car is moving
             // (in order to keep car on the line after safety signal is lost)
@@ -156,12 +151,10 @@ void initializeVehicleCan() {
 } // namespace
 
 extern "C" void runControlTask(void) {
-
-    SystemManager::instance().registerTask();
-
     encoder.initialize();
-
     initializeVehicleCan();
+
+    taskMonitor.registerInitializedTask();
 
     while (true) {
         while (const auto frame = vehicleCanManager.read(vehicleCanSubscriberId)) {
@@ -185,7 +178,7 @@ extern "C" void runControlTask(void) {
         vehicleCanManager.periodicSend<can::LongitudinalState>(vehicleCanSubscriberId, car.speed, isRemoteControlled, car.distance);
         vehicleCanManager.periodicSend<can::LateralState>(vehicleCanSubscriberId, car.frontWheelAngle, car.rearWheelAngle, radian_t(0));
 
-        SystemManager::instance().notify(
+        taskMonitor.notify(
             !vehicleCanManager.hasTimedOut(vehicleCanSubscriberId) &&
             !hasControlTimedOut(swControl.lat)                     &&
             !hasControlTimedOut(swControl.lon)                     &&
@@ -196,7 +189,6 @@ extern "C" void runControlTask(void) {
 }
 
 void tim_ControlLoop_PeriodElapsedCallback() {
-
     static millisecond_t lastUpdateTime = getExactTime();
 
     const millisecond_t now = getExactTime();

@@ -24,8 +24,6 @@ bool useSafetyEnableSignal = true;
 
 namespace {
 
-bool isRemoteControlled = false;
-
 struct LateralControl {
     micro::radian_t frontWheelAngle;
     micro::radian_t rearWheelAngle;
@@ -42,7 +40,7 @@ struct ControlData {
     state_t<LongitudinalControl> lon;
 };
 
-PID_Params speedControllerParams = { 0.0f, 0.0f, 0.0f };
+PID_Params speedControllerParams = { 0.5f, 0.002f, 0.0f };
 CarProps car;
 ramp_t<m_per_sec_t> speedRamp;
 
@@ -88,8 +86,6 @@ ControlData getControl(const ControlData& swControl, const state_t<RemoteControl
     // remote control must be present, otherwise it means remote controller task or inter-task communication has died
     if (!hasControlTimedOut(remoteControl)) {
         const RemoteControllerData& rc = remoteControl.value();
-
-        isRemoteControlled = RemoteControllerData::channel_t::DirectControl == rc.activeChannel;
 
         if (RemoteControllerData::channel_t::DirectControl == rc.activeChannel) {
             control.lat = {
@@ -175,6 +171,7 @@ extern "C" void runControlTask(void) {
         car.frontWheelAngle = frontSteeringServo.angle();
         car.rearWheelAngle  = rearSteeringServo.angle();
 
+        const bool isRemoteControlled = remoteControl.value().activeChannel == RemoteControllerData::channel_t::DirectControl;
         vehicleCanManager.periodicSend<can::LongitudinalState>(vehicleCanSubscriberId, car.speed, isRemoteControlled, car.distance);
         vehicleCanManager.periodicSend<can::LateralState>(vehicleCanSubscriberId, car.frontWheelAngle, car.rearWheelAngle, radian_t(0));
 

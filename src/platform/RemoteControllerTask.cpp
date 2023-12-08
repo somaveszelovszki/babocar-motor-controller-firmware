@@ -11,8 +11,6 @@
 
 using namespace micro;
 
-extern bool useSafetyEnableSignal;
-
 namespace {
 
 constexpr uint32_t INPUT_CHANNEL_ACCEL_OFFSET = 80;

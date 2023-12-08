@@ -9,3 +9,5 @@ extern micro::queue_t<RemoteControllerData, 1> remoteControllerQueue;
 
 extern micro::CanManager vehicleCanManager;
 extern micro::TaskMonitor taskMonitor;
+
+extern bool useSafetyEnableSignal;

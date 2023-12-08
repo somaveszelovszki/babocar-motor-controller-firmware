@@ -20,8 +20,6 @@
 
 using namespace micro;
 
-bool useSafetyEnableSignal = true;
-
 namespace {
 
 struct LateralControl {

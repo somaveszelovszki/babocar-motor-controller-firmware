@@ -184,9 +184,9 @@ extern "C" void runControlTask(void) {
 }
 
 void tim_ControlLoop_PeriodElapsedCallback() {
-    static millisecond_t lastUpdateTime = getExactTime();
+    static auto lastUpdateTime = getExactTime();
 
-    const millisecond_t now = getExactTime();
+    const auto now = getExactTime();
     encoder.update();
 
     car.speed    = encoder.lastDiff() * cfg::ENCODER_INCR_DISTANCE / (now - lastUpdateTime);

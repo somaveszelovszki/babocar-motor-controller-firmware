@@ -4,4 +4,3 @@ using namespace micro;
 
 TEST(dummy, dummy) {
 }
-

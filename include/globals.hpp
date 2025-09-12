@@ -1,9 +1,9 @@
 #pragma once
 
-#include "RemoteControllerData.hpp"
-
 #include <micro/debug/TaskMonitor.hpp>
 #include <micro/panel/CanManager.hpp>
+
+#include "RemoteControllerData.hpp"
 
 extern micro::queue_t<RemoteControllerData, 1> remoteControllerQueue;
 

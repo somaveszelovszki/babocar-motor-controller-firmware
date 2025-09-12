@@ -1,10 +1,12 @@
+#include <cmath>
+
 #include <FreeRTOS.h>
 #include <cfg_board.hpp>
-#include <cmath>
-#include <micro/panel/panelVersion.hpp>
-#include <micro/port/timer.hpp>
 #include <system_init.h>
 #include <task.h>
+
+#include <micro/panel/panelVersion.hpp>
+#include <micro/port/timer.hpp>
 
 using namespace micro;
 
